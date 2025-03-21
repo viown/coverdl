@@ -1,0 +1,2 @@
+class ProviderRequestFailed(Exception):
+    pass
