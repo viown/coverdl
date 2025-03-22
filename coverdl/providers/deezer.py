@@ -4,9 +4,8 @@ from coverdl.providers.source import Source
 from coverdl.exceptions import ProviderRequestFailed
 
 class DeezerProvider(Provider):
-    def __init__(self):
-        self.base_url = "https://api.deezer.com"
-        self.source = Source.DEEZER
+    def __init__(self, base_url="https://api.deezer.com", source=Source.DEEZER):
+        super().__init__(base_url, source)
 
     def get_covers(self, artist, album) -> list[Cover]:
         results = []

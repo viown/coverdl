@@ -12,7 +12,7 @@ def error(message):
 
 @click.command(context_settings={'show_default': True})
 @click.option('-p', '--provider',
-              type=Source, multiple=True, default=[Source.DEEZER],
+              type=Source, multiple=True, default=[Source.APPLE_MUSIC, Source.DEEZER],
               help='The provider to download cover art from. Multiple providers can be specified by passing this option more than once (by order of preference).')
 @click.option('--cover-name',
               default='cover',

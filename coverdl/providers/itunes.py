@@ -4,9 +4,8 @@ from coverdl.providers.source import Source
 import requests
 
 class ITunesProvider(Provider):
-    def __init__(self):
-        self.base_url = "https://itunes.apple.com"
-        self.source = Source.ITUNES
+    def __init__(self, base_url="https://itunes.apple.com", source=Source.ITUNES):
+        super().__init__(base_url, source)
 
     def get_covers(self, artist, album, country='us'):
         results = []
