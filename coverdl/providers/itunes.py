@@ -25,7 +25,7 @@ class ITunesProvider(Provider):
                         Cover(
                             artist=item["artistName"],
                             title=item["collectionName"],
-                            source=Source.ITUNES,
+                            source=self.source,
                             cover_url=item.get("artworkUrl100") or item.get("artworkUrl60")
                         )
                     )

@@ -40,7 +40,7 @@ Click [here](https://github.com/viown/coverdl/blob/7d45d6f80a80ab45c87f80a924522
 
 coverdl will not download cover art for albums that already have them. Instead, you can upgrade them to a better quality version.
 
-The `--upgrade` option allows you to upgrade your existing cover art to a better quality version (if found) by comparing the similarity of both images. This allows you to safely upgrade your existing cover art while being sure that a different version won't be downloaded:
+The `--upgrade` option allows you to upgrade your existing cover art to a better quality version (if found) by comparing the similarity of both images. This allows you to safely upgrade your existing cover art while being sure that a different version won't be downloaded by mistake:
 
 ```
 coverdl --upgrade /artist/album/
@@ -61,10 +61,17 @@ coverdl -r /music
 
 The recursive option assumes the following directory structure in the `/music` directory:
 ```
-music/
+/music/
 ├─ Artist Name One/
 │  ├─ Album/
 │  │  ├─ 01 - Track Title.flac
-├─ Artist Name Two/
-├─ Artist Three/
+```
+
+### When using --upgrade
+
+Using `--upgrade` alongside `-r/--recursive` can be slow, and each run of the command will take the same length of time.
+
+You can tell coverdl to skip already upgraded cover art on the next run by passing a cache file:
+```
+coverdl -r --upgrade /music --cache /PATH/TO/CACHE/cache.txt
 ```

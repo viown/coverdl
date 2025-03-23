@@ -4,11 +4,15 @@ from coverdl.providers import providers
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
 from coverdl.exceptions import TriesExceeded, ProviderRequestFailed
+from coverdl.utils import has_cover, download_url
 import os
 import sys
 
 def error(message):
     click.echo(f"{click.style('Error:', fg='red')} {message}")
+
+def warn(message):
+    click.echo(f"{click.style('Warn:', fg='yellow')} {message}")
 
 @click.command(context_settings={'show_default': True})
 @click.option('-p', '--provider',
@@ -50,7 +54,7 @@ def coverdl(path, provider, cover_name, recursive, tag):
             try:
                 metadata = get_metadata_from_directory(path)
             except TriesExceeded:
-                error(f"Failed to fetch sufficient metadata from directory: {click.style(path, bold=True)}")
+                error(f"Failed to fetch sufficient metadata from album: {click.style(path, bold=True)}")
                 failed += 1
                 continue
         elif os.path.isfile(path):
@@ -62,6 +66,10 @@ def coverdl(path, provider, cover_name, recursive, tag):
                 failed += 1
                 continue
 
+        if has_cover(path):
+            warn(f"Path {click.style(path, bold=True)} already has a cover. Skipping.")
+            failed += 1
+            continue
 
         if not metadata:
             error(f"Could not fetch metadata from path: {click.style(path, bold=True)}")
@@ -75,5 +83,10 @@ def coverdl(path, provider, cover_name, recursive, tag):
                 results = results + provider.get_covers(metadata.artist, metadata.album)
             except ProviderRequestFailed as e:
                 error(f"Failed to fetch cover art data from provider: {e.args[0].value}. Got error: {e.args[1]}")
+
+        if len(results) == 0:
+            error(f"No suitable cover art could be found for {click.style(path, bold=True)}")
+            failed += 1
+            continue
 
         print(results)

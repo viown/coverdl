@@ -22,7 +22,7 @@ class DeezerProvider(Provider):
                     Cover(
                         artist=item["artist"]["name"],
                         title=item["title"],
-                        source=Source.DEEZER,
+                        source=self.source,
                         cover_url=item["cover_xl"]
                     )
                 )

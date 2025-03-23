@@ -19,7 +19,6 @@ class AppleMusicProvider(ITunesProvider):
         covers = super().get_covers(artist, album, country)
 
         for cover in covers:
-            cover.source = Source.APPLE_MUSIC
             cover.cover_url = self._transform_url(cover.cover_url, country)
 
         return covers
