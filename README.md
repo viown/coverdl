@@ -38,6 +38,8 @@ Click [here](https://github.com/viown/coverdl/blob/7d45d6f80a80ab45c87f80a924522
 
 ## Upgrading
 
+> **Note:** The upgrading feature has not been implemented yet, below shows what it would look like.
+
 coverdl will not download cover art for albums that already have them. Instead, you can upgrade them to a better quality version.
 
 The `--upgrade` option allows you to upgrade your existing cover art to a better quality version (if found) by comparing the similarity of both images. This allows you to safely upgrade your existing cover art while being sure that a different version won't be downloaded by mistake:
