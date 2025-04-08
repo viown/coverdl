@@ -31,6 +31,8 @@ def warn(message, silence=False):
 @click.option('-r', '--recursive',
               is_flag=True,
               help='Enables recursive download. This will traverse the path you give it and download cover art for albums that don\'t have them.')
+@click.option('--strict',
+              help='Enables strict mode (for upgrades). Ensures that only near-perfect comparisons will be upgraded.')
 @click.option('--no-silence-warnings',
               default=False,
               is_flag=True)
@@ -90,7 +92,7 @@ def coverdl(path, provider, cover_name, recursive, tag, no_silence_warnings):
                     # There is no need to fetch from the next provider if we already have results.
                     break
             except ProviderRequestFailed as e:
-                error(f"Failed to fetch cover art data from provider: {e.args[0].value}. Got error: {e.args[1]}")
+                warn(f"Failed to fetch cover art data from provider: {e.args[0].value}. Got error: {e.args[1]}", not no_silence_warnings)
 
         if len(results) == 0:
             error(f"No suitable cover art could be found for {click.style(path, bold=True)}")
