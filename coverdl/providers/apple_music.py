@@ -1,6 +1,7 @@
 from coverdl.providers.provider import Provider
 from coverdl.providers.itunes import ITunesProvider
 from coverdl.providers.source import Source
+import requests
 
 class AppleMusicProvider(ITunesProvider):
     def __init__(self, base_url="https://itunes.apple.com", source=Source.APPLE_MUSIC):
@@ -14,11 +15,19 @@ class AppleMusicProvider(ITunesProvider):
         cover_url = '/'.join(cover_url.split('/')[:-1])
 
         return cover_url
+    
+    def _test_url(self, url):
+        r = requests.head(url)
+
+        return r.ok
 
     def get_covers(self, artist, album, country='us'):
+        results = []
         covers = super().get_covers(artist, album, country)
 
         for cover in covers:
             cover.cover_url = self._transform_url(cover.cover_url, country)
+            if self._test_url(cover.cover_url):
+                results.append(cover)
 
-        return covers
+        return results

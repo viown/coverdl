@@ -1,6 +1,7 @@
 from coverdl.exceptions import ProviderRequestFailed
 from coverdl.providers.provider import Provider, Cover
 from coverdl.providers.source import Source
+from difflib import SequenceMatcher
 import requests
 
 class ITunesProvider(Provider):
@@ -20,16 +21,20 @@ class ITunesProvider(Provider):
             data = r.json()
 
             for item in data["results"]:
-                if item["collectionName"].lower().strip() == album.lower().strip():
+                # Check if the album names are somewhat similar.
+                # TODO: Filter out possible identifiers in the name
+                similarity_ratio = SequenceMatcher(None, item["collectionName"].lower().strip(), album.lower().strip()).ratio()
+                if similarity_ratio > 0.8:
                     results.append(
                         Cover(
                             artist=item["artistName"],
                             title=item["collectionName"],
                             source=self.source,
-                            cover_url=item.get("artworkUrl100") or item.get("artworkUrl60")
+                            cover_url=item.get("artworkUrl100") or item.get("artworkUrl60"),
+                            confidence=similarity_ratio
                         )
                     )
 
-            return results
+            return sorted(results, key=lambda c: c.confidence, reverse=True)
         else:
             raise ProviderRequestFailed(self.source, r.text)
