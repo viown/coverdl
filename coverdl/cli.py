@@ -161,7 +161,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
                     continue
 
                 hamming_distance = compare_covers(cover_candidate_buffer, cover)
-                similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= options.hamming_distance
+                similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= options.max_hamming_distance
 
                 if similarity_check:
                     candidate = cover_candidate_buffer
@@ -169,12 +169,12 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
                     candidate_type = mimetypes.guess_type(cover_candidate.cover_url)[0]
                     break
                 else:
-                    if options.strict or options.hamming_distance == 0:
+                    if options.strict or options.max_hamming_distance == 0:
                         warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
                             f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.")
                     else:
                         warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.hamming_distance}). Skipping.")
+                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.max_hamming_distance}). Skipping.")
                     continue
             else:
                 warn(f"Error occurred while fetching cover art: {cover_candidate.cover_url}. Skipping.")
@@ -234,7 +234,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
               help='Upgrade candidates exceeding this size will not be considered (unit must be in MBs).')
 @click.option('--strict',
               help='Enables strict mode (for upgrades). Ensures that only near-perfect comparisons will be upgraded.')
-@click.option('--hamming-distance',
+@click.option('--max-hamming-distance',
             type=int, default=4,
             help='Specifies the maximum hamming distance used for upgrades. Setting this to 0 is the equivalent of using --strict')
 @click.option('--silence-warnings',
@@ -253,7 +253,7 @@ def coverdl(path: str,
             max_size: float,
             max_upgrade_size: float,
             strict: bool,
-            hamming_distance: int,
+            max_hamming_distance: int,
             silence_warnings: bool,
             delete_old_covers: bool):
     options = Options(
@@ -267,7 +267,7 @@ def coverdl(path: str,
         max_size=max_size,
         max_upgrade_size=max_upgrade_size,
         strict=strict,
-        hamming_distance=hamming_distance,
+        max_hamming_distance=max_hamming_distance,
         silence_warnings=silence_warnings,
         delete_old_covers=delete_old_covers
     )
