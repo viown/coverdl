@@ -10,7 +10,7 @@ def download_cover(url, target, cover_name):
     type = mimetypes.guess_type(url)[0]
     ext = mimetypes.guess_extension(type)
 
-    r = requests.get(url)
+    r = requests.get(url, timeout=10)
     r.raise_for_status()
 
     with open(os.path.join(target, cover_name + ext), 'wb') as f:

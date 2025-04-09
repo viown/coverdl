@@ -4,7 +4,7 @@ import io
 import mimetypes
 import click
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, Timeout
 from mutagen import MutagenError
 from coverdl import __version__
 from coverdl.providers import providers
@@ -94,6 +94,8 @@ def handle_download(options: Options, selected_providers: list[Provider]):
             completed += 1
         except HTTPError as e:
             error(f"Failed to download cover art for {click.style(path, bold=True)}, got error: {e.response.status_code}")
+        except Timeout:
+            error(f"Timed out while downloading cover art for {click.style(path, bold=True)}")
 
     click.echo()
     click.echo(f"{click.style('Completed:', bold=True)} {completed}, {click.style('Failed:', bold=True)} {failed}")
@@ -145,7 +147,11 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
 
         for i, cover_candidate in enumerate(results):
             rank = i + 1
-            r = requests.get(cover_candidate.cover_url)
+            try:
+                r = requests.get(cover_candidate.cover_url, timeout=10)
+            except Timeout:
+                error(f"Timed out while downloading cover art for {click.style(path, bold=True)}.")
+                continue
             if r.ok:
                 cover_candidate_buffer = io.BytesIO(r.content)
                 cover_candidate_buffer_size = cover_candidate_buffer.getbuffer().nbytes / 1000000
