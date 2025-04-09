@@ -7,8 +7,8 @@ import imagehash
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
 def download_cover(url, target, cover_name):
-    type = mimetypes.guess_type(url)[0]
-    ext = mimetypes.guess_extension(type)
+    mimetype = mimetypes.guess_type(url)[0]
+    ext = mimetypes.guess_extension(mimetype)
 
     r = requests.get(url, timeout=10)
     r.raise_for_status()
@@ -25,8 +25,8 @@ def compare_covers(img1, img2):
 def get_paths_with_covers(path):
     paths = []
     for root, dirs, _ in os.walk(path):
-        for dir in dirs:
-            full_dir = os.path.join(root, dir)
+        for current_dir in dirs:
+            full_dir = os.path.join(root, current_dir)
             if has_cover(full_dir):
                 paths.append(full_dir)
     return paths
