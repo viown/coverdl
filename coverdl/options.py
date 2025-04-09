@@ -10,5 +10,7 @@ class Options:
     recursive: bool
     upgrade: bool
     max_size: float
+    max_upgrade_size: float
     strict: bool
-    no_silence_warnings: bool
+    silence_warnings: bool
+    delete_old_covers: bool

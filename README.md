@@ -49,7 +49,11 @@ coverdl --upgrade /artist/album/
 Your old cover art will not be deleted, it will be renamed: e.g `cover.jpg` to `cover.jpg.bk`
 To tell coverdl to delete it, pass the `--delete-old-covers` option.
 
-In order for cover art to be considered an "upgrade," it must be larger in size. Use the `--max-size` option (in MBs) to prevent coverdl from exceeding a certain size. By default, this value is set to 10M.
+Use the `--max-size` option (in MBs) to prevent coverdl from replacing cover art that exceed a certain size.
+
+Use `--max-upgrade-size` (in MBs) to prevent downloading cover art that exceed a certain size.
+
+Use the `--strict` flag to ensure only perfect comparisons will be upgraded. For example, if your cover art has an explicit advisory label in the cover art while the upgrade candidate doesn't, `--strict` will block the upgrade.
 
 ## Downloading for an entire music library
 
