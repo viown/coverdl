@@ -97,7 +97,6 @@ def handle_download(options: Options, path_locations: list[str], selected_provid
 def handle_upgrade(options: Options, path_locations: list[str], selected_providers: list[Provider]):
     for path in path_locations:
         cover = get_cover(path)
-        full_cover_path = os.path.join(path, cover)
 
         if not cover:
             warn(f"{click.style(path, bold=True)} does not have cover. Skipping.", options.silence_warnings)
@@ -106,7 +105,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
         cover_size = os.path.getsize(cover) / 1000000
 
         if cover_size > options.max_size:
-            warn(f"{click.style(full_cover_path, bold=True)} exceeds --max-size ({round(cover_size, 2)} / {options.max_size}). Skipping.", options.silence_warnings)
+            warn(f"{click.style(cover, bold=True)} exceeds --max-size ({round(cover_size, 2)} / {options.max_size}). Skipping.", options.silence_warnings)
             continue
 
         try:
@@ -128,6 +127,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
             continue
 
         candidate = None
+        candidate_hamming_distance = None
         candidate_type = None
 
         for i, cover_candidate in enumerate(results):
@@ -147,20 +147,21 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
                         f"is less than or equivalent in size ({cover_candidate_buffer_size} / {cover_size}). Skipping.")
                     continue
 
-                hamming_distance = compare_covers(cover_candidate_buffer, full_cover_path)
-                similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= 5
+                hamming_distance = compare_covers(cover_candidate_buffer, cover)
+                similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= options.hamming_distance
 
                 if similarity_check:
                     candidate = cover_candidate_buffer
+                    candidate_hamming_distance = hamming_distance
                     candidate_type = mimetypes.guess_type(cover_candidate.cover_url)[0]
                     break
                 else:
-                    if options.strict:
+                    if options.strict or options.hamming_distance == 0:
                         warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
                             f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.")
                     else:
                         warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= 5). Skipping.")
+                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.hamming_distance}). Skipping.")
                     continue
             else:
                 warn(f"Error occurred while fetching cover art: {cover_candidate.cover_url}. Skipping.")
@@ -171,20 +172,24 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 
         new_cover_ext = mimetypes.guess_extension(candidate_type)
 
-        i = 0
-        to_rename = full_cover_path + '.bk'
-        while os.path.exists(to_rename):
-            i += 1
-            name, ext = os.path.splitext(full_cover_path)
-            to_rename = name + str(i) + ext + '.bk'
-        os.rename(full_cover_path, to_rename)
-        click.echo(f"Renamed {full_cover_path} to {to_rename}")
+        if options.delete_old_covers:
+            os.remove(cover)
+            click.echo(f"Deleted {cover}")
+        else:
+            i = 0
+            to_rename = cover + '.bk'
+            while os.path.exists(to_rename):
+                i += 1
+                name, ext = os.path.splitext(cover)
+                to_rename = name + str(i) + ext + '.bk'
+            os.rename(cover, to_rename)
+            click.echo(f"Renamed {cover} to {to_rename}")
 
         target = os.path.join(path, options.cover_name + new_cover_ext)
         with open(target, "wb") as f:
             f.write(candidate.getbuffer())
 
-        click.echo(f"{click.style('Successfully', fg='green')} saved new cover art: {target}")
+        click.echo(f"{click.style('Successfully', fg='green')} saved new cover art: {target} (hamming distance = {candidate_hamming_distance})")
 
 @click.command(context_settings={'show_default': True})
 @click.option('-p', '--provider',
@@ -210,6 +215,9 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
               help='Upgrade candidates exceeding this size will not be considered (unit must be in MBs).')
 @click.option('--strict',
               help='Enables strict mode (for upgrades). Ensures that only near-perfect comparisons will be upgraded.')
+@click.option('--hamming-distance',
+            type=int, default=4,
+            help='Specifies the maximum hamming distance used for upgrades. Setting this to 0 is the equivalent of using --strict')
 @click.option('--silence-warnings',
               is_flag=True)
 @click.option('--delete-old-covers',
@@ -225,6 +233,7 @@ def coverdl(path: str,
             max_size: float,
             max_upgrade_size: float,
             strict: bool,
+            hamming_distance: int,
             silence_warnings: bool,
             delete_old_covers: bool):
     options = Options(
@@ -237,6 +246,7 @@ def coverdl(path: str,
         max_size=max_size,
         max_upgrade_size=max_upgrade_size,
         strict=strict,
+        hamming_distance=hamming_distance,
         silence_warnings=silence_warnings,
         delete_old_covers=delete_old_covers
     )

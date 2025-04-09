@@ -12,5 +12,6 @@ class Options:
     max_size: float
     max_upgrade_size: float
     strict: bool
+    hamming_distance: int
     silence_warnings: bool
     delete_old_covers: bool
