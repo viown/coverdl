@@ -6,6 +6,7 @@ class Options:
     path: str
     providers: list[Source]
     cover_name: str
+    cache: str
     tags: list[str]
     recursive: bool
     upgrade: bool

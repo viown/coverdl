@@ -22,6 +22,15 @@ def compare_covers(img1, img2):
 
     return hash_0 - hash_1
 
+def get_paths_with_covers(path):
+    paths = []
+    for root, dirs, _ in os.walk(path):
+        for dir in dirs:
+            full_dir = os.path.join(root, dir)
+            if has_cover(full_dir):
+                paths.append(full_dir)
+    return paths
+
 def get_recursive_paths(path):
     paths = []
     for artist_path in os.listdir(path):

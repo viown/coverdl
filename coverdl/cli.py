@@ -8,6 +8,7 @@ from requests.exceptions import HTTPError
 from mutagen import MutagenError
 from coverdl import __version__
 from coverdl.providers import providers
+from coverdl.cache import Cache
 from coverdl.providers.provider import Cover, Provider
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
@@ -17,6 +18,7 @@ from coverdl.utils import (
     get_cover,
     download_cover,
     get_recursive_paths,
+    get_paths_with_covers,
     compare_covers
 )
 from coverdl.options import Options
@@ -37,7 +39,9 @@ def get_metadata_from_path(path):
         click.echo(f"Fetching metadata from track {click.style(path, bold=True)}")
         return get_metadata_from_file(path)
 
-def handle_download(options: Options, path_locations: list[str], selected_providers: list[Provider]):
+def handle_download(options: Options, selected_providers: list[Provider]):
+    path_locations = get_recursive_paths(options.path) if options.recursive else [options.path]
+
     total = 0
     completed = 0
     failed = 0
@@ -94,9 +98,16 @@ def handle_download(options: Options, path_locations: list[str], selected_provid
     click.echo()
     click.echo(f"{click.style('Completed:', bold=True)} {completed}, {click.style('Failed:', bold=True)} {failed}")
 
-def handle_upgrade(options: Options, path_locations: list[str], selected_providers: list[Provider]):
+def handle_upgrade(options: Options, selected_providers: list[Provider]):
+    path_locations = get_paths_with_covers(options.path) if options.recursive else [options.path]
+    cache = Cache(options.cache)
+
     for path in path_locations:
         cover = get_cover(path)
+
+        if cache.has(os.path.abspath(path)):
+            warn(f"{click.style(path, bold=True)} exists in cache. It'll be skipped.")
+            continue
 
         if not cover:
             warn(f"{click.style(path, bold=True)} does not have cover. Skipping.", options.silence_warnings)
@@ -105,13 +116,14 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
         cover_size = os.path.getsize(cover) / 1000000
 
         if cover_size > options.max_size:
-            warn(f"{click.style(cover, bold=True)} exceeds --max-size ({round(cover_size, 2)} / {options.max_size}). Skipping.", options.silence_warnings)
+            warn(f"{click.style(cover, bold=True)} exceeds --max-size ({round(cover_size, 2)}M / {options.max_size}M). Skipping.", options.silence_warnings)
             continue
 
         try:
             metadata = get_metadata_from_path(path)
         except (MutagenError, TriesExceeded):
             error(f"Failed to fetch metadata from {path}")
+            cache.add(os.path.abspath(path))
             continue
 
         results: list[Cover] = []
@@ -124,6 +136,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 
         if len(results) == 0:
             error(f"No suitable upgradable cover art could be found for {click.style(path, bold=True)} (all providers returned no results)")
+            cache.add(os.path.abspath(path))
             continue
 
         candidate = None
@@ -139,12 +152,12 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 
                 if cover_candidate_buffer_size > options.max_upgrade_size:
                     warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"exceeds max_upgrade_size ({round(cover_candidate_buffer_size)} / {options.max_upgrade_size}). Skipping.")
+                        f"exceeds max_upgrade_size ({round(cover_candidate_buffer_size)}M / {options.max_upgrade_size}M). Skipping.")
                     continue
 
                 if cover_candidate_buffer_size <= cover_size:
                     warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"is less than or equivalent in size ({cover_candidate_buffer_size} / {cover_size}). Skipping.")
+                        f"is less than or equivalent in size ({cover_candidate_buffer_size}M / {cover_size}M). Skipping.")
                     continue
 
                 hamming_distance = compare_covers(cover_candidate_buffer, cover)
@@ -168,6 +181,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 
         if not candidate:
             error(f"No suitable cover art could be found for {click.style(path, bold=True)} (exhausted all candidates)")
+            cache.add(os.path.abspath(path))
             continue
 
         new_cover_ext = mimetypes.guess_extension(candidate_type)
@@ -190,6 +204,9 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
             f.write(candidate.getbuffer())
 
         click.echo(f"{click.style('Successfully', fg='green')} saved new cover art: {target} (hamming distance = {candidate_hamming_distance})")
+        cache.add(os.path.abspath(path))
+
+    cache.save()
 
 @click.command(context_settings={'show_default': True})
 @click.option('-p', '--provider',
@@ -198,6 +215,8 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 @click.option('--cover-name',
               default='cover',
               help='The filename for the cover art image.')
+@click.option('--cache',
+              help='Specify a cache file to prevent repeat upgrades')
 @click.option('-t', '--tag',
               multiple=True,
               help='A tag is an attribute unique to your release. e.g: remastered, expanded. Multiple tags can be specified.')
@@ -227,6 +246,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 def coverdl(path: str,
             provider: list[Source],
             cover_name: str,
+            cache: str,
             recursive: bool,
             upgrade: bool,
             tag: list[str],
@@ -240,6 +260,7 @@ def coverdl(path: str,
         path=path,
         providers=provider,
         cover_name=cover_name,
+        cache=cache,
         tags=tag,
         recursive=recursive,
         upgrade=upgrade,
@@ -259,9 +280,7 @@ def coverdl(path: str,
         error("--recursive and --tag cannot be used together.")
         sys.exit(1)
 
-    path_locations = get_recursive_paths(options.path) if options.recursive else [options.path]
-
     if options.upgrade:
-        handle_upgrade(options, path_locations, selected_providers)
+        handle_upgrade(options, selected_providers)
     else:
-        handle_download(options, path_locations, selected_providers)
+        handle_download(options, selected_providers)
