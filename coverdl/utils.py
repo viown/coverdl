@@ -1,6 +1,8 @@
+from PIL import Image
 import requests
 import os
 import mimetypes
+import imagehash
 
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
@@ -13,6 +15,21 @@ def download_cover(url, target, cover_name):
 
     with open(os.path.join(target, cover_name + ext), 'wb') as f:
         f.write(r.content)
+
+def compare_covers(img1, img2):
+    hash_0 = imagehash.average_hash(Image.open(img1))
+    hash_1 = imagehash.average_hash(Image.open(img2))
+
+    return hash_0 - hash_1
+
+def get_paths_with_covers(path):
+    paths = []
+    for root, dirs, _ in os.walk(path):
+        for dir in dirs:
+            full_dir = os.path.join(root, dir)
+            if has_cover(full_dir):
+                paths.append(full_dir)
+    return paths
 
 def get_recursive_paths(path):
     paths = []
@@ -28,7 +45,7 @@ def get_base_path(path):
         return os.path.dirname(path)
     return os.path.normpath(path)
 
-def has_cover(path):
+def get_cover(path):
     if os.path.isfile(path):
         path = os.path.dirname(path)
 
@@ -37,5 +54,7 @@ def has_cover(path):
     for file in files:
         name, ext = os.path.splitext(file)
         if ext in IMAGE_EXTENSIONS and name in ["folder", "poster", "cover", "default"]:
-            return True
-    return False
+            return os.path.join(path, file)
+
+def has_cover(path):
+    return bool(get_cover(path))

@@ -38,8 +38,6 @@ Click [here](https://github.com/viown/coverdl/blob/7d45d6f80a80ab45c87f80a924522
 
 ## Upgrading
 
-> **Note:** The upgrading feature has not been implemented yet, below shows what it would look like.
-
 coverdl will not download cover art for albums that already have them. Instead, you can upgrade them to a better quality version.
 
 The `--upgrade` option allows you to upgrade your existing cover art to a better quality version (if found) by comparing the similarity of both images. This allows you to safely upgrade your existing cover art while being sure that a different version won't be downloaded by mistake:
@@ -51,7 +49,11 @@ coverdl --upgrade /artist/album/
 Your old cover art will not be deleted, it will be renamed: e.g `cover.jpg` to `cover.jpg.bk`
 To tell coverdl to delete it, pass the `--delete-old-covers` option.
 
-In order for cover art to be considered an "upgrade," it must be larger in size. Use the `--max-size` option (in MBs) to prevent coverdl from exceeding a certain size. By default, this value is set to 10M.
+Use the `--max-size` option (in MBs) to prevent coverdl from replacing cover art that exceed a certain size.
+
+Use `--max-upgrade-size` (in MBs) to prevent downloading cover art that exceed a certain size.
+
+Use the `--strict` flag to ensure only perfect comparisons will be upgraded. For example, if your cover art has an explicit advisory label in the cover art while the upgrade candidate doesn't, `--strict` will block the upgrade.
 
 ## Downloading for an entire music library
 
