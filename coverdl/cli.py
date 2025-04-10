@@ -12,7 +12,7 @@ from coverdl.cache import Cache
 from coverdl.providers.provider import Cover, Provider
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
-from coverdl.exceptions import MissingMetadata, TriesExceeded, ProviderRequestFailed
+from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded, ProviderRequestFailed
 from coverdl.utils import (
     has_cover,
     get_cover,
@@ -22,6 +22,8 @@ from coverdl.utils import (
     compare_covers
 )
 from coverdl.options import Options
+
+ALLOWED_IMAGE_FORMATS = [".png", ".jpg"]
 
 def error(message):
     click.echo(f"{click.style('Error:', fg='red')} {message}")
@@ -50,7 +52,7 @@ def handle_download(options: Options, selected_providers: list[Provider]):
         total += 1
         try:
             metadata = get_metadata_from_path(path)
-        except TriesExceeded:
+        except (TriesExceeded, MetadataNotFound):
             error(f"Failed to fetch sufficient metadata from album: {click.style(path, bold=True)}")
             failed += 1
             continue
@@ -85,7 +87,19 @@ def handle_download(options: Options, selected_providers: list[Provider]):
             failed += 1
             continue
 
-        cover: Cover = results[0]
+        cover: Cover = None
+
+        for result in results:
+            cover_ext = mimetypes.guess_extension(mimetypes.guess_type(cover.cover_url)[0])
+            if cover_ext not in ALLOWED_IMAGE_FORMATS:
+                warn(f"Cover image format not allowed {cover_ext}. Skipping.", options.silence_warnings)
+                continue
+            cover = result
+
+        if not cover:
+            error(f"Failed to find suitable cover art for {click.style(path, bold=True)}.")
+            failed += 1
+            continue
 
         try:
             dir_path = path if os.path.isdir(path) else os.path.dirname(path)
@@ -108,7 +122,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
         cover = get_cover(path)
 
         if cache.has(os.path.abspath(path)):
-            warn(f"{click.style(path, bold=True)} exists in cache. It'll be skipped.")
+            warn(f"{click.style(path, bold=True)} exists in cache. It'll be skipped.", options.silence_warnings)
             continue
 
         if not cover:
@@ -123,7 +137,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
 
         try:
             metadata = get_metadata_from_path(path)
-        except (MutagenError, TriesExceeded, MissingMetadata):
+        except (MutagenError, TriesExceeded, MissingMetadata, MetadataNotFound):
             error(f"Failed to fetch metadata from {path}")
             cache.add(os.path.abspath(path))
             continue
@@ -158,12 +172,14 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
 
                 if cover_candidate_buffer_size > options.max_upgrade_size:
                     warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"exceeds max_upgrade_size ({round(cover_candidate_buffer_size)}M / {options.max_upgrade_size}M). Skipping.")
+                        f"exceeds max_upgrade_size ({round(cover_candidate_buffer_size)}M / {options.max_upgrade_size}M). Skipping.",
+                        options.silence_warnings)
                     continue
 
                 if cover_candidate_buffer_size <= cover_size:
                     warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"is less than or equivalent in size ({cover_candidate_buffer_size}M / {cover_size}M). Skipping.")
+                        f"is less than or equivalent in size ({cover_candidate_buffer_size}M / {cover_size}M). Skipping.",
+                        options.silence_warnings)
                     continue
 
                 hamming_distance = compare_covers(cover_candidate_buffer, cover)
@@ -177,13 +193,15 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
                 else:
                     if options.strict or options.max_hamming_distance == 0:
                         warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.")
+                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.",
+                            options.silence_warnings)
                     else:
                         warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.max_hamming_distance}). Skipping.")
+                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.max_hamming_distance}). Skipping.",
+                            options.silence_warnings)
                     continue
             else:
-                warn(f"Error occurred while fetching cover art: {cover_candidate.cover_url}. Skipping.")
+                warn(f"Error occurred while fetching cover art: {cover_candidate.cover_url}. Skipping.", options.silence_warnings)
 
         if not candidate:
             error(f"No suitable cover art could be found for {click.style(path, bold=True)} (exhausted all candidates)")
@@ -191,6 +209,10 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
             continue
 
         new_cover_ext = mimetypes.guess_extension(candidate_type)
+
+        if new_cover_ext not in ALLOWED_IMAGE_FORMATS:
+            warn(f"Image {new_cover_ext} not allowed as valid image format.", options.silence_warnings)
+            continue
 
         if options.delete_old_covers:
             os.remove(cover)

@@ -6,3 +6,6 @@ class TriesExceeded(Exception):
 
 class MissingMetadata(Exception):
     pass
+
+class MetadataNotFound(Exception):
+    pass

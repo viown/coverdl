@@ -4,7 +4,7 @@ from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 from dataclasses import dataclass
 import os
-from coverdl.exceptions import MissingMetadata, TriesExceeded
+from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded
 
 SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".m4a"]
 
@@ -58,4 +58,4 @@ def get_metadata_from_directory(path):
 
                 if tries > 3:
                     raise TriesExceeded()
-    raise TriesExceeded()
+    raise MetadataNotFound()
