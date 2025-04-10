@@ -90,7 +90,7 @@ def handle_download(options: Options, selected_providers: list[Provider]):
         cover: Cover = None
 
         for result in results:
-            cover_ext = mimetypes.guess_extension(mimetypes.guess_type(cover.cover_url)[0])
+            cover_ext = mimetypes.guess_extension(mimetypes.guess_type(result.cover_url)[0])
             if cover_ext not in ALLOWED_IMAGE_FORMATS:
                 warn(f"Cover image format not allowed {cover_ext}. Skipping.", options.silence_warnings)
                 continue
