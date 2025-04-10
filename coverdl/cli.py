@@ -88,9 +88,8 @@ def handle_download(options: Options, selected_providers: list[Provider]):
         cover: Cover = None
 
         for result in results:
-            cover_ext = mimetypes.guess_extension(mimetypes.guess_type(result.cover_url)[0])
-            if cover_ext not in IMAGE_EXTENSIONS:
-                warn(f"Cover image format not allowed {cover_ext}. Skipping.", options.silence_warnings)
+            if result.ext not in IMAGE_EXTENSIONS:
+                warn(f"Cover image format not allowed {result.ext}. Skipping.", options.silence_warnings)
                 continue
             cover = result
 
@@ -101,7 +100,7 @@ def handle_download(options: Options, selected_providers: list[Provider]):
 
         try:
             dir_path = path if os.path.isdir(path) else os.path.dirname(path)
-            download_cover(cover.cover_url, dir_path, options.cover_name)
+            download_cover(cover.cover_url, dir_path, options.cover_name + cover.ext)
             click.echo(f"{click.style('Successfully', fg='green')} downloaded cover art for {click.style(path, bold=True)}")
             completed += 1
         except HTTPError as e:
@@ -155,10 +154,15 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
 
         candidate = None
         candidate_hamming_distance = None
-        candidate_type = None
+        candidate_ext = None
 
         for i, cover_candidate in enumerate(results):
             rank = i + 1
+
+            if cover_candidate.ext not in IMAGE_EXTENSIONS:
+                warn(f"Image {cover_candidate.ext} not allowed as valid image format.", options.silence_warnings)
+                continue
+
             try:
                 r = requests.get(cover_candidate.cover_url, timeout=10)
             except Timeout:
@@ -186,7 +190,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
                 if similarity_check:
                     candidate = cover_candidate_buffer
                     candidate_hamming_distance = hamming_distance
-                    candidate_type = mimetypes.guess_type(cover_candidate.cover_url)[0]
+                    candidate_ext = cover_candidate.ext
                     break
                 else:
                     if options.strict or options.max_hamming_distance == 0:
@@ -206,12 +210,6 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
             cache.add(os.path.abspath(path))
             continue
 
-        new_cover_ext = mimetypes.guess_extension(candidate_type)
-
-        if new_cover_ext not in IMAGE_EXTENSIONS:
-            warn(f"Image {new_cover_ext} not allowed as valid image format.", options.silence_warnings)
-            continue
-
         if options.delete_old_covers:
             os.remove(cover)
             click.echo(f"Deleted {cover}")
@@ -225,7 +223,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
             os.rename(cover, to_rename)
             click.echo(f"Renamed {cover} to {to_rename}")
 
-        target = os.path.join(path, options.cover_name + new_cover_ext)
+        target = os.path.join(path, options.cover_name + candidate_ext)
         with open(target, "wb") as f:
             f.write(candidate.getbuffer())
 

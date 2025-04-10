@@ -1,6 +1,7 @@
 from coverdl.providers.provider import Provider
 from coverdl.providers.itunes import ITunesProvider
 from coverdl.providers.source import Source
+from coverdl.utils import get_extension_from_url
 import requests
 
 class AppleMusicProvider(ITunesProvider):
@@ -28,6 +29,7 @@ class AppleMusicProvider(ITunesProvider):
 
         for cover in covers:
             cover.cover_url = self._transform_url(cover.cover_url, country)
+            cover.ext = get_extension_from_url(cover.cover_url)
             if self._test_url(cover.cover_url):
                 results.append(cover)
 

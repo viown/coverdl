@@ -8,13 +8,10 @@ from coverdl.metadata import SUPPORTED_SONG_EXTENSIONS
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
 def download_cover(url, target, cover_name):
-    mimetype = mimetypes.guess_type(url)[0]
-    ext = mimetypes.guess_extension(mimetype)
-
     r = requests.get(url, timeout=10)
     r.raise_for_status()
 
-    with open(os.path.join(target, cover_name + ext), 'wb') as f:
+    with open(os.path.join(target, cover_name), 'wb') as f:
         f.write(r.content)
 
 def compare_covers(img1, img2):
@@ -36,6 +33,9 @@ def get_base_path(path):
     if os.path.isfile(path):
         return os.path.dirname(path)
     return os.path.normpath(path)
+
+def get_extension_from_url(url):
+    return mimetypes.guess_extension(mimetypes.guess_type(url)[0])
 
 def get_cover(path):
     if os.path.isfile(path):

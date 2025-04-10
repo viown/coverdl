@@ -2,6 +2,7 @@ import requests
 from coverdl.providers.provider import Provider, Cover
 from coverdl.providers.source import Source
 from coverdl.exceptions import ProviderRequestFailed
+from coverdl.utils import get_extension_from_url
 
 class DeezerProvider(Provider):
     def __init__(self, base_url="https://api.deezer.com", source=Source.DEEZER):
@@ -23,7 +24,8 @@ class DeezerProvider(Provider):
                         artist=item["artist"]["name"],
                         title=item["title"],
                         source=self.source,
-                        cover_url=item["cover_xl"]
+                        cover_url=item["cover_xl"],
+                        ext=get_extension_from_url(item["cover_xl"])
                     )
                 )
         else:

@@ -8,6 +8,7 @@ class Cover:
     title: str
     source: Source
     cover_url: str
+    ext: str
     confidence: int = 1
 
 class Provider(ABC):
