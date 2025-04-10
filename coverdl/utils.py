@@ -47,7 +47,7 @@ def get_base_path(path):
 
 def get_cover(path):
     if os.path.isfile(path):
-        path = os.path.dirname(path)
+        path = os.path.dirname(os.path.abspath(path))
 
     files = os.listdir(path)
 
