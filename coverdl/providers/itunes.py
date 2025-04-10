@@ -1,6 +1,7 @@
 from coverdl.exceptions import ProviderRequestFailed
 from coverdl.providers.provider import Provider, Cover
 from coverdl.providers.source import Source
+from coverdl.utils import get_extension_from_url
 from difflib import SequenceMatcher
 import requests
 
@@ -25,13 +26,15 @@ class ITunesProvider(Provider):
                 # TODO: Filter out possible identifiers in the name
                 similarity_ratio = SequenceMatcher(None, item["collectionName"].lower().strip(), album.lower().strip()).ratio()
                 if similarity_ratio > 0.8:
+                    cover_url = item.get("artworkUrl100") or item.get("artworkUrl60")
                     results.append(
                         Cover(
                             artist=item["artistName"],
                             title=item["collectionName"],
                             source=self.source,
-                            cover_url=item.get("artworkUrl100") or item.get("artworkUrl60"),
-                            confidence=similarity_ratio
+                            cover_url=cover_url,
+                            confidence=similarity_ratio,
+                            ext=get_extension_from_url(cover_url)
                         )
                     )
 
