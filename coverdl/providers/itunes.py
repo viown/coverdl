@@ -5,8 +5,8 @@ from difflib import SequenceMatcher
 import requests
 
 class ITunesProvider(Provider):
-    def __init__(self, base_url="https://itunes.apple.com", source=Source.ITUNES):
-        super().__init__(base_url, source)
+    def __init__(self, source=Source.ITUNES):
+        super().__init__("https://itunes.apple.com", source)
 
     def get_covers(self, artist, album, country='us'):
         results = []
