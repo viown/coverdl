@@ -4,7 +4,7 @@ from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 from dataclasses import dataclass
 import os
-from coverdl.exceptions import TriesExceeded
+from coverdl.exceptions import MissingMetadata, TriesExceeded
 
 SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".m4a"]
 
@@ -37,6 +37,9 @@ def get_metadata_from_file(path):
             for item, val in mapping.items():
                 metadata[item] = dict(file)[val][0] if val in file else None
 
+    if not metadata["album"] or not metadata["artist"]:
+        raise MissingMetadata()
+
     return Metadata(**metadata)
 
 def get_metadata_from_directory(path):
@@ -47,9 +50,8 @@ def get_metadata_from_directory(path):
             if ext.lower() in SUPPORTED_EXTENSIONS:
                 try:
                     metadata = get_metadata_from_file(os.path.join(root, file))
-                    if metadata.album and metadata.artist:
-                        return metadata
-                except mutagen.MutagenError:
+                    return metadata
+                except (mutagen.MutagenError, MissingMetadata):
                     pass
 
                 tries += 1

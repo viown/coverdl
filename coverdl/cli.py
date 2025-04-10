@@ -12,7 +12,7 @@ from coverdl.cache import Cache
 from coverdl.providers.provider import Cover, Provider
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
-from coverdl.exceptions import TriesExceeded, ProviderRequestFailed
+from coverdl.exceptions import MissingMetadata, TriesExceeded, ProviderRequestFailed
 from coverdl.utils import (
     has_cover,
     get_cover,
@@ -123,7 +123,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
 
         try:
             metadata = get_metadata_from_path(path)
-        except (MutagenError, TriesExceeded):
+        except (MutagenError, TriesExceeded, MissingMetadata):
             error(f"Failed to fetch metadata from {path}")
             cache.add(os.path.abspath(path))
             continue

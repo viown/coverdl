@@ -3,3 +3,6 @@ class ProviderRequestFailed(Exception):
 
 class TriesExceeded(Exception):
     pass
+
+class MissingMetadata(Exception):
+    pass
