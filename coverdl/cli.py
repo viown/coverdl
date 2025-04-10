@@ -19,11 +19,10 @@ from coverdl.utils import (
     download_cover,
     get_recursive_paths,
     get_paths_with_covers,
-    compare_covers
+    compare_covers,
+    IMAGE_EXTENSIONS
 )
 from coverdl.options import Options
-
-ALLOWED_IMAGE_FORMATS = [".png", ".jpg"]
 
 def error(message):
     click.echo(f"{click.style('Error:', fg='red')} {message}")
@@ -91,7 +90,7 @@ def handle_download(options: Options, selected_providers: list[Provider]):
 
         for result in results:
             cover_ext = mimetypes.guess_extension(mimetypes.guess_type(result.cover_url)[0])
-            if cover_ext not in ALLOWED_IMAGE_FORMATS:
+            if cover_ext not in IMAGE_EXTENSIONS:
                 warn(f"Cover image format not allowed {cover_ext}. Skipping.", options.silence_warnings)
                 continue
             cover = result
@@ -210,7 +209,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
 
         new_cover_ext = mimetypes.guess_extension(candidate_type)
 
-        if new_cover_ext not in ALLOWED_IMAGE_FORMATS:
+        if new_cover_ext not in IMAGE_EXTENSIONS:
             warn(f"Image {new_cover_ext} not allowed as valid image format.", options.silence_warnings)
             continue
 

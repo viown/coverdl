@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import os
 from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded
 
-SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".m4a"]
+SUPPORTED_SONG_EXTENSIONS = [".mp3", ".flac", ".m4a"]
 
 @dataclass
 class Metadata:
@@ -47,7 +47,7 @@ def get_metadata_from_directory(path):
     for root, _, files in os.walk(path):
         for file in files:
             ext = os.path.splitext(file)[1]
-            if ext.lower() in SUPPORTED_EXTENSIONS:
+            if ext.lower() in SUPPORTED_SONG_EXTENSIONS:
                 try:
                     metadata = get_metadata_from_file(os.path.join(root, file))
                     return metadata

@@ -3,6 +3,7 @@ import requests
 import os
 import mimetypes
 import imagehash
+from coverdl.metadata import SUPPORTED_SONG_EXTENSIONS
 
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
@@ -27,7 +28,7 @@ def get_paths_with_covers(path):
     for root, dirs, _ in os.walk(path):
         for current_dir in dirs:
             full_dir = os.path.join(root, current_dir)
-            if has_cover(full_dir):
+            if is_album_dir(full_dir):
                 paths.append(full_dir)
     return paths
 
@@ -56,5 +57,15 @@ def get_cover(path):
         if ext in IMAGE_EXTENSIONS and name in ["folder", "poster", "cover", "default"]:
             return os.path.join(path, file)
 
+def has_song(dir):
+    for f in os.listdir(dir):
+        _, ext = os.path.splitext(f)
+        if ext in SUPPORTED_SONG_EXTENSIONS:
+            return True
+    return False
+
 def has_cover(path):
     return bool(get_cover(path))
+
+def is_album_dir(dir):
+    return has_cover(dir) and has_song(dir)
