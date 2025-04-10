@@ -1,0 +1,20 @@
+name: Python package
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - name: Build and publish to pypi
+      uses: JRubics/poetry-publish@v2.1
+      with:
+        pypi_token: ${{ secrets.PYPI_TOKEN }}
