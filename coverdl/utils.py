@@ -23,22 +23,13 @@ def compare_covers(img1, img2):
 
     return hash_0 - hash_1
 
-def get_paths_with_covers(path):
+def get_album_paths(path, must_have_cover=True):
     paths = []
     for root, dirs, _ in os.walk(path):
         for current_dir in dirs:
             full_dir = os.path.join(root, current_dir)
-            if is_album_dir(full_dir):
+            if is_album_dir(full_dir) or (has_song(full_dir) and not must_have_cover):
                 paths.append(full_dir)
-    return paths
-
-def get_recursive_paths(path):
-    paths = []
-    for artist_path in os.listdir(path):
-        for album_path in os.listdir(os.path.join(path, artist_path)):
-            album_path = os.path.join(path, artist_path, album_path)
-            if os.path.isdir(album_path):
-                paths.append(album_path)
     return paths
 
 def get_base_path(path):

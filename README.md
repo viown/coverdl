@@ -63,14 +63,6 @@ If you have a large music library and you wish to download or upgrade cover art 
 coverdl -r /music
 ```
 
-The recursive option assumes the following directory structure in the `/music` directory:
-```
-/music/
-├─ Artist Name One/
-│  ├─ Album/
-│  │  ├─ 01 - Track Title.flac
-```
-
 ### When using --upgrade
 
 Using `--upgrade` alongside `-r/--recursive` can be slow, and each run of the command will take the same length of time.
