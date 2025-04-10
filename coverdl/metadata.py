@@ -58,3 +58,4 @@ def get_metadata_from_directory(path):
 
                 if tries > 3:
                     raise TriesExceeded()
+    raise TriesExceeded()
