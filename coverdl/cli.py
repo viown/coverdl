@@ -40,8 +40,7 @@ def get_metadata_from_path(path):
         click.echo(f"Fetching metadata from track {click.style(path, bold=True)}")
         return get_metadata_from_file(path)
 
-def handle_download(options: Options, selected_providers: list[Provider]):
-    path_locations = get_recursive_paths(options.path) if options.recursive else [options.path]
+def handle_download(options: Options, path_locations: list[str], selected_providers: list[Provider]):
 
     total = 0
     completed = 0
@@ -113,8 +112,7 @@ def handle_download(options: Options, selected_providers: list[Provider]):
     click.echo()
     click.echo(f"{click.style('Completed:', bold=True)} {completed}, {click.style('Failed:', bold=True)} {failed}")
 
-def handle_upgrade(options: Options, selected_providers: list[Provider]):
-    path_locations = get_paths_with_covers(options.path) if options.recursive else [options.path]
+def handle_upgrade(options: Options, path_locations: list[str], selected_providers: list[Provider]):
     cache = Cache(options.cache)
 
     for path in path_locations:
@@ -303,11 +301,13 @@ def coverdl(path: str,
     selected_providers = list(filter(lambda p: p.source in provider, providers))
     selected_providers.sort(key=lambda p: options.providers.index(p.source))
 
+    path_locations = get_paths_with_covers(options.path) if options.recursive else [options.path]
+
     if options.recursive and options.tags:
         error("--recursive and --tag cannot be used together.")
         sys.exit(1)
 
     if options.upgrade:
-        handle_upgrade(options, selected_providers)
+        handle_upgrade(options, path_locations, selected_providers)
     else:
-        handle_download(options, selected_providers)
+        handle_download(options, path_locations, selected_providers)

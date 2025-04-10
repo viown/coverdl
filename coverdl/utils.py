@@ -32,15 +32,6 @@ def get_paths_with_covers(path):
                 paths.append(full_dir)
     return paths
 
-def get_recursive_paths(path):
-    paths = []
-    for artist_path in os.listdir(path):
-        for album_path in os.listdir(os.path.join(path, artist_path)):
-            album_path = os.path.join(path, artist_path, album_path)
-            if os.path.isdir(album_path):
-                paths.append(album_path)
-    return paths
-
 def get_base_path(path):
     if os.path.isfile(path):
         return os.path.dirname(path)
