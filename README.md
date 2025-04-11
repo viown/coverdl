@@ -55,6 +55,19 @@ Use `--max-upgrade-size` (in MBs) to prevent downloading cover art that exceed a
 
 Use the `--strict` flag to ensure only perfect comparisons will be upgraded. For example, if your cover art has an explicit advisory label in the cover art while the upgrade candidate doesn't, `--strict` will block the upgrade.
 
+## Advanced
+
+### Piping
+
+coverdl supports passing multiple paths to it via the pipe operator. This can be useful for advanced use cases, for example:
+
+If your library structure follows `ARTIST/ALBUM`, you could download or upgrade cover art for albums only created within the last day:
+
+```
+find music/ -mindepth 2 -maxdepth 2 -mtime -1 -type d | coverdl
+```
+Which can be useful as a cron job to speed up performance without using `-r`.
+
 ## Downloading for an entire music library
 
 If you have a large music library and you wish to download or upgrade cover art for all albums, use the `-r/--recursive` option while passing the path to your media library:
