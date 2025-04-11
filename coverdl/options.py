@@ -3,11 +3,11 @@ from coverdl.providers.source import Source
 
 @dataclass
 class Options:
-    path: list[str]
-    providers: list[Source]
+    path: tuple[str]
+    providers: tuple[Source]
     cover_name: str
     cache: str
-    tags: list[str]
+    tags: tuple[str]
     recursive: bool
     upgrade: bool
     max_size: float
