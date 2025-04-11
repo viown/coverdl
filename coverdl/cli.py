@@ -304,7 +304,7 @@ def coverdl(path: str,
     path_locations = None
     if not sys.stdin.isatty():
         stdin_text = click.get_text_stream('stdin')
-        path_locations = list(filter(None, stdin_text.read().split('\n')))
+        path_locations = list(stdin_text.read().rstrip().split('\n'))
     else:
         if options.recursive and len(options.path) != 1:
             error("Please specify (one) path for recursive search.")
