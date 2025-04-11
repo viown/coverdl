@@ -1,7 +1,7 @@
 import os
 import sys
 import io
-import mimetypes
+import sys
 import click
 import requests
 from requests.exceptions import HTTPError, Timeout
@@ -39,9 +39,7 @@ def get_metadata_from_path(path):
         click.echo(f"Fetching metadata from track {click.style(path, bold=True)}")
         return get_metadata_from_file(path)
 
-def handle_download(options: Options, selected_providers: list[Provider]):
-    path_locations = get_album_paths(options.path, must_have_cover=False) if options.recursive else [options.path]
-
+def handle_download(options: Options, path_locations: list[str], selected_providers: list[Provider]):
     total = 0
     completed = 0
     failed = 0
@@ -111,8 +109,7 @@ def handle_download(options: Options, selected_providers: list[Provider]):
     click.echo()
     click.echo(f"{click.style('Completed:', bold=True)} {completed}, {click.style('Failed:', bold=True)} {failed}")
 
-def handle_upgrade(options: Options, selected_providers: list[Provider]):
-    path_locations = get_album_paths(options.path) if options.recursive else [options.path]
+def handle_upgrade(options: Options, path_locations: list[str], selected_providers: list[Provider]):
     cache = Cache(options.cache)
 
     for path in path_locations:
@@ -265,7 +262,7 @@ def handle_upgrade(options: Options, selected_providers: list[Provider]):
               is_flag=True)
 @click.option('--delete-old-covers',
               is_flag=True)
-@click.argument('path', type=click.Path(exists=True))
+@click.argument('path', type=click.Path(exists=True), nargs=-1)
 @click.version_option(__version__)
 def coverdl(path: str,
             provider: list[Source],
@@ -302,9 +299,19 @@ def coverdl(path: str,
 
     if options.recursive and options.tags:
         error("--recursive and --tag cannot be used together.")
-        sys.exit(1)
+        return
+
+    path_locations = None
+    if not sys.stdin.isatty():
+        stdin_text = click.get_text_stream('stdin')
+        path_locations = list(filter(None, stdin_text.read().split('\n')))
+    else:
+        if options.recursive and len(options.path) != 1:
+            error("Please specify (one) path for recursive search.")
+            return
+        path_locations = get_album_paths(options.path[0], must_have_cover=options.upgrade) if options.recursive else options.path
 
     if options.upgrade:
-        handle_upgrade(options, selected_providers)
+        handle_upgrade(options, path_locations, selected_providers)
     else:
-        handle_download(options, selected_providers)
+        handle_download(options, path_locations, selected_providers)

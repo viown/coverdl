@@ -3,7 +3,7 @@ from coverdl.providers.source import Source
 
 @dataclass
 class Options:
-    path: str
+    path: list[str]
     providers: list[Source]
     cover_name: str
     cache: str
