@@ -1,7 +1,6 @@
 import os
 import sys
 import io
-import sys
 import click
 import requests
 from requests.exceptions import HTTPError, Timeout

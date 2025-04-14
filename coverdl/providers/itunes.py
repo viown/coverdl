@@ -9,14 +9,14 @@ class ITunesProvider(Provider):
     BASE_URL = "https://itunes.apple.com"
     SOURCE = Source.ITUNES
 
-    def get_covers(self, artist, album, country='us'):
+    def get_covers(self, artist, album):
         results = []
         params = {
             "term": artist,
             "media": "music",
             "entity": "album"
         }
-        r = requests.get(self.BASE_URL + "/search", params=params)
+        r = requests.get(self.BASE_URL + "/search", params=params, timeout=10)
 
         if r.ok:
             data = r.json()
@@ -39,5 +39,4 @@ class ITunesProvider(Provider):
                     )
 
             return sorted(results, key=lambda c: c.confidence, reverse=True)
-        else:
-            raise ProviderRequestFailed(self.SOURCE, r.text)
+        raise ProviderRequestFailed(self.SOURCE, r.text)

@@ -13,7 +13,7 @@ class DeezerProvider(Provider):
         params={
             "q": f"artist:\"{artist}\" album:\"{album}\""
         }
-        r = requests.get(self.BASE_URL + "/search/album", params=params)
+        r = requests.get(self.BASE_URL + "/search/album", params=params, timeout=10)
 
         if r.ok:
             data = r.json()
