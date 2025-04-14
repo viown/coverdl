@@ -12,12 +12,8 @@ class Cover:
     confidence: int = 1
 
 class Provider(ABC):
-    base_url: str
-    source: Source
-
-    def __init__(self, base_url: str, source: Source):
-        self.base_url = base_url
-        self.source = source
+    BASE_URL: str
+    SOURCE: Source
 
     @abstractmethod
     def get_covers(self, artist: str, album: str, country: str) -> list[Cover]:

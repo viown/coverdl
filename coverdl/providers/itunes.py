@@ -6,8 +6,8 @@ from difflib import SequenceMatcher
 import requests
 
 class ITunesProvider(Provider):
-    def __init__(self, source=Source.ITUNES):
-        super().__init__("https://itunes.apple.com", source)
+    BASE_URL = "https://itunes.apple.com"
+    SOURCE = Source.ITUNES
 
     def get_covers(self, artist, album, country='us'):
         results = []
@@ -16,7 +16,7 @@ class ITunesProvider(Provider):
             "media": "music",
             "entity": "album"
         }
-        r = requests.get(self.base_url + "/search", params=params)
+        r = requests.get(self.BASE_URL + "/search", params=params)
 
         if r.ok:
             data = r.json()
@@ -31,7 +31,7 @@ class ITunesProvider(Provider):
                         Cover(
                             artist=item["artistName"],
                             title=item["collectionName"],
-                            source=self.source,
+                            source=self.SOURCE,
                             cover_url=cover_url,
                             confidence=similarity_ratio,
                             ext=get_extension_from_url(cover_url)
@@ -40,4 +40,4 @@ class ITunesProvider(Provider):
 
             return sorted(results, key=lambda c: c.confidence, reverse=True)
         else:
-            raise ProviderRequestFailed(self.source, r.text)
+            raise ProviderRequestFailed(self.SOURCE, r.text)

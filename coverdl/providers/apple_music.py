@@ -4,9 +4,13 @@ from coverdl.providers.source import Source
 from coverdl.utils import get_extension_from_url
 import requests
 
-class AppleMusicProvider(ITunesProvider):
+class AppleMusicProvider(Provider):
+    BASE_URL = None
+    SOURCE = Source.APPLE_MUSIC
+
     def __init__(self):
-        super().__init__(Source.APPLE_MUSIC)
+        super().__init__()
+        self.itunes_provider = ITunesProvider()
 
     def _transform_url(self, itunes_url, country='us'):
         # Convert the iTunes url into a higher-quality Apple Music equivalent
@@ -25,11 +29,12 @@ class AppleMusicProvider(ITunesProvider):
 
     def get_covers(self, artist, album, country='us'):
         results = []
-        covers = super().get_covers(artist, album, country)
+        covers = self.itunes_provider.get_covers(artist, album, country)
 
         for cover in covers:
             cover.cover_url = self._transform_url(cover.cover_url, country)
             cover.ext = get_extension_from_url(cover.cover_url)
+            cover.source = self.SOURCE
             if self._test_url(cover.cover_url):
                 results.append(cover)
 

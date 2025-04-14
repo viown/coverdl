@@ -294,8 +294,8 @@ def coverdl(path: str,
     )
     
     # Get and sort the providers based on user preference
-    selected_providers = list(filter(lambda p: p.source in provider, providers))
-    selected_providers.sort(key=lambda p: options.providers.index(p.source))
+    selected_providers = list(filter(lambda p: p.SOURCE in provider, providers))
+    selected_providers.sort(key=lambda p: options.providers.index(p.SOURCE))
 
     if options.recursive and options.tags:
         error("--recursive and --tag cannot be used together.")
