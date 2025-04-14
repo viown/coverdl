@@ -5,7 +5,6 @@ from coverdl.utils import get_extension_from_url
 import requests
 
 class AppleMusicProvider(Provider):
-    BASE_URL = None
     SOURCE = Source.APPLE_MUSIC
 
     def __init__(self):

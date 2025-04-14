@@ -8,7 +8,10 @@ from coverdl.metadata import SUPPORTED_SONG_EXTENSIONS
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
 def download_cover(url, target, cover_name):
-    r = requests.get(url, timeout=10)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Linux; Android 7.0; BLN-L22) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Mobile Safari/537.36"
+    }
+    r = requests.get(url, headers=headers, timeout=10)
     r.raise_for_status()
 
     with open(os.path.join(target, cover_name), 'wb') as f:
