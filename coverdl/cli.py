@@ -8,7 +8,8 @@ from mutagen import MutagenError
 from coverdl import __version__
 from coverdl.providers import providers
 from coverdl.cache import Cache
-from coverdl.providers.provider import Cover, Provider
+from coverdl.providers.provider import Provider
+from coverdl.cover import Cover
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
 from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded, ProviderRequestFailed

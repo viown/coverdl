@@ -1,6 +1,7 @@
 from coverdl.exceptions import ProviderRequestFailed
-from coverdl.providers.provider import Provider, Cover
+from coverdl.providers.provider import Provider
 from coverdl.providers.source import Source
+from coverdl.cover import Cover
 from coverdl.utils import get_extension_from_url
 from difflib import SequenceMatcher
 import requests

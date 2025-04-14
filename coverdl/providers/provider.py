@@ -1,15 +1,6 @@
 from abc import ABC, abstractmethod
 from coverdl.providers.source import Source
-from dataclasses import dataclass
-
-@dataclass
-class Cover:
-    artist: str
-    title: str
-    source: Source
-    cover_url: str
-    ext: str
-    confidence: int = 1
+from coverdl.cover import Cover
 
 class Provider(ABC):
     BASE_URL: str | None

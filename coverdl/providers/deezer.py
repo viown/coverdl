@@ -1,5 +1,6 @@
 import requests
-from coverdl.providers.provider import Provider, Cover
+from coverdl.providers.provider import Provider
+from coverdl.cover import Cover
 from coverdl.providers.source import Source
 from coverdl.exceptions import ProviderRequestFailed
 from coverdl.utils import get_extension_from_url
