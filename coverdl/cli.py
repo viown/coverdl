@@ -19,7 +19,8 @@ from coverdl.utils import (
     download_cover,
     get_album_paths,
     compare_covers,
-    IMAGE_EXTENSIONS
+    IMAGE_EXTENSIONS,
+    DEFAULT_HEADERS
 )
 from coverdl.options import Options
 
@@ -161,7 +162,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
                 continue
 
             try:
-                r = requests.get(cover_candidate.cover_url, timeout=10)
+                r = requests.get(cover_candidate.cover_url, headers=DEFAULT_HEADERS, timeout=10)
             except Timeout:
                 error(f"Timed out while downloading cover art for {click.style(path, bold=True)}.")
                 continue

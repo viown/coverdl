@@ -1,6 +1,7 @@
 from enum import Enum
 
 class Source(Enum):
-    DEEZER = "deezer"
-    ITUNES = "itunes" # not recommended
     APPLE_MUSIC = "applemusic"
+    DEEZER = "deezer"
+    DISCOGS = "discogs"
+    ITUNES = "itunes" # not recommended

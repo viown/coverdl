@@ -25,7 +25,7 @@ class ITunesProvider(Provider):
             for item in data["results"]:
                 # Check if the album names are somewhat similar.
                 # TODO: Filter out possible identifiers in the name
-                similarity_ratio = SequenceMatcher(None, item["collectionName"].lower().strip(), album.lower().strip()).ratio()
+                similarity_ratio = self.compare_titles(item["collectionName"], album)
                 if similarity_ratio > 0.8:
                     cover_url = item.get("artworkUrl100") or item.get("artworkUrl60")
                     results.append(
