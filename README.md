@@ -34,7 +34,7 @@ coverdl -p applemusic -p itunes /artist/album
 
 The order in which the providers are specified matters, as they will be used for priority ranking.
 
-Click [here](https://github.com/viown/coverdl/blob/7d45d6f80a80ab45c87f80a924522ca4512c1347/coverdl/providers/source.py#L3) for a list of providers.
+Click [here](https://github.com/viown/coverdl/blob/main/coverdl/providers/source.py#L3) for a list of providers.
 
 ## Upgrading
 
