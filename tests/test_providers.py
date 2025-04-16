@@ -1,12 +1,9 @@
-from click.testing import CliRunner
 from coverdl.providers import (
     AppleMusicProvider,
     DeezerProvider,
     DiscogsProvider,
     ITunesProvider
 )
-import shutil
-import os
 
 def test_apple_music():
     provider = AppleMusicProvider()
