@@ -257,7 +257,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 @click.option('--strict',
               help='Enables strict mode (for upgrades). Ensures that only near-perfect comparisons will be upgraded.')
 @click.option('--max-hamming-distance',
-            type=int, default=4,
+            type=int, default=8,
             help='Specifies the maximum hamming distance used for upgrades. Setting this to 0 is the equivalent of using --strict')
 @click.option('--silence-warnings',
               is_flag=True)
