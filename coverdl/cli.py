@@ -1,36 +1,25 @@
 import os
 import sys
-import io
 import click
-import requests
 from requests.exceptions import HTTPError, Timeout
 from mutagen import MutagenError
 from coverdl import __version__
 from coverdl.providers import providers
 from coverdl.cache import Cache
 from coverdl.providers.provider import Provider
-from coverdl.cover import Cover
+from coverdl.cover import ExtCover
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
 from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded, ProviderRequestFailed
 from coverdl.utils import (
     has_cover,
     get_cover,
-    download_cover,
     get_album_paths,
-    compare_covers,
     IMAGE_EXTENSIONS,
-    DEFAULT_HEADERS
+    warn,
+    error
 )
 from coverdl.options import Options
-
-def error(message):
-    click.echo(f"{click.style('Error:', fg='red')} {message}")
-
-def warn(message, silence=False):
-    if silence:
-        return
-    click.echo(f"{click.style('Warn:', fg='yellow')} {message}")
 
 def get_metadata_from_path(path):
     if os.path.isdir(path):
@@ -84,7 +73,7 @@ def handle_download(options: Options, path_locations: list[str], selected_provid
             failed += 1
             continue
 
-        cover: Cover = None
+        cover: ExtCover | None = None
 
         for result in results:
             if result.ext not in IMAGE_EXTENSIONS:
@@ -99,7 +88,7 @@ def handle_download(options: Options, path_locations: list[str], selected_provid
 
         try:
             dir_path = path if os.path.isdir(path) else os.path.dirname(path)
-            download_cover(cover.cover_url, dir_path, options.cover_name + cover.ext)
+            cover.download(os.path.join(dir_path, options.cover_name + cover.ext))
             click.echo(f"{click.style('Successfully', fg='green')} downloaded cover art for {click.style(path, bold=True)}")
             completed += 1
         except HTTPError as e:
@@ -124,7 +113,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
             warn(f"{click.style(path, bold=True)} does not have cover. Skipping.", options.silence_warnings)
             continue
 
-        cover_size = os.path.getsize(cover) / 1000000
+        cover_size = cover.size / 1000000
 
         if cover_size > options.max_size:
             warn(f"{click.style(cover, bold=True)} exceeds --max-size ({round(cover_size, 2)}M / {options.max_size}M). Skipping.", options.silence_warnings)
@@ -137,11 +126,12 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
             cache.add(os.path.abspath(path))
             continue
 
-        results: list[Cover] = []
+        results: list[ExtCover] = []
 
         for provider in selected_providers:
             try:
-                results = results + provider.get_covers(metadata.artist, metadata.album)
+                if metadata:
+                    results = results + provider.get_covers(metadata.artist, metadata.album)
             except ProviderRequestFailed as e:
                 warn(f"Failed to fetch cover art data from provider: {e.args[0].value}. Got error: {e.args[1]}", options.silence_warnings)
 
@@ -152,7 +142,6 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 
         candidate = None
         candidate_hamming_distance = None
-        candidate_ext = None
 
         for i, cover_candidate in enumerate(results):
             rank = i + 1
@@ -161,47 +150,43 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
                 warn(f"Image {cover_candidate.ext} not allowed as valid image format.", options.silence_warnings)
                 continue
 
+            hamming_distance = None
             try:
-                r = requests.get(cover_candidate.cover_url, headers=DEFAULT_HEADERS, timeout=10)
+                hamming_distance = cover.compare(cover_candidate)
             except Timeout:
                 error(f"Timed out while downloading cover art for {click.style(path, bold=True)}.")
                 continue
-            if r.ok:
-                cover_candidate_buffer = io.BytesIO(r.content)
-                cover_candidate_buffer_size = cover_candidate_buffer.getbuffer().nbytes / 1000000
+       
+            cover_candidate_buffer_size = cover_candidate.get_buffer_size() / 1000000
 
-                if cover_candidate_buffer_size > options.max_upgrade_size:
-                    warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"exceeds max_upgrade_size ({round(cover_candidate_buffer_size)}M / {options.max_upgrade_size}M). Skipping.",
-                        options.silence_warnings)
-                    continue
+            if cover_candidate_buffer_size > options.max_upgrade_size:
+                warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
+                    f"exceeds max_upgrade_size ({round(cover_candidate_buffer_size)}M / {options.max_upgrade_size}M). Skipping.",
+                    options.silence_warnings)
+                continue
 
-                if cover_candidate_buffer_size <= cover_size:
-                    warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"is less than or equivalent in size ({cover_candidate_buffer_size}M / {cover_size}M). Skipping.",
-                        options.silence_warnings)
-                    continue
+            if cover_candidate_buffer_size <= cover_size:
+                warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
+                    f"is less than or equivalent in size ({cover_candidate_buffer_size}M / {cover_size}M). Skipping.",
+                    options.silence_warnings)
+                continue
 
-                hamming_distance = compare_covers(cover_candidate_buffer, cover)
-                similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= options.max_hamming_distance
+            similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= options.max_hamming_distance
 
-                if similarity_check:
-                    candidate = cover_candidate_buffer
-                    candidate_hamming_distance = hamming_distance
-                    candidate_ext = cover_candidate.ext
-                    break
-                else:
-                    if options.strict or options.max_hamming_distance == 0:
-                        warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.",
-                            options.silence_warnings)
-                    else:
-                        warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                            f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.max_hamming_distance}). Skipping.",
-                            options.silence_warnings)
-                    continue
+            if similarity_check:
+                candidate = cover_candidate
+                candidate_hamming_distance = hamming_distance
+                break
             else:
-                warn(f"Error occurred while fetching cover art: {cover_candidate.cover_url}. Skipping.", options.silence_warnings)
+                if options.strict or options.max_hamming_distance == 0:
+                    warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
+                        f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.",
+                        options.silence_warnings)
+                else:
+                    warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
+                        f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.max_hamming_distance}). Skipping.",
+                        options.silence_warnings)
+                continue
 
         if not candidate:
             error(f"No suitable cover art could be found for {click.style(path, bold=True)} (exhausted all candidates)")
@@ -209,21 +194,14 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
             continue
 
         if options.delete_old_covers:
-            os.remove(cover)
+            cover.delete()
             click.echo(f"Deleted {cover}")
         else:
-            i = 0
-            to_rename = cover + '.bk'
-            while os.path.exists(to_rename):
-                i += 1
-                name, ext = os.path.splitext(cover)
-                to_rename = name + str(i) + ext + '.bk'
-            os.rename(cover, to_rename)
-            click.echo(f"Renamed {cover} to {to_rename}")
+            cover.backup()
+            click.echo(f"Renamed {cover} to {cover.path}")
 
-        target = os.path.join(path, options.cover_name + candidate_ext)
-        with open(target, "wb") as f:
-            f.write(candidate.getbuffer())
+        target = os.path.join(path, options.cover_name + cover_candidate.ext)
+        cover_candidate.download(target)
 
         click.echo(f"{click.style('Successfully', fg='green')} saved new cover art: {target} (hamming distance = {candidate_hamming_distance})")
         cache.add(os.path.abspath(path))
@@ -256,6 +234,9 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
               help='Upgrade candidates exceeding this size will not be considered (unit must be in MBs).')
 @click.option('--strict',
               help='Enables strict mode (for upgrades). Ensures that only near-perfect comparisons will be upgraded.')
+@click.option('--replace-non-square',
+              is_flag=True,
+              help='Replace non-square cover art. Must be used alongside --upgrade')
 @click.option('--max-hamming-distance',
             type=int, default=8,
             help='Specifies the maximum hamming distance used for upgrades. Setting this to 0 is the equivalent of using --strict')
@@ -275,6 +256,7 @@ def coverdl(path: str,
             max_size: float,
             max_upgrade_size: float,
             strict: bool,
+            replace_non_square: bool,
             max_hamming_distance: int,
             silence_warnings: bool,
             delete_old_covers: bool):
@@ -289,6 +271,7 @@ def coverdl(path: str,
         max_size=max_size,
         max_upgrade_size=max_upgrade_size,
         strict=strict,
+        replace_non_square=replace_non_square,
         max_hamming_distance=max_hamming_distance,
         silence_warnings=silence_warnings,
         delete_old_covers=delete_old_covers
@@ -302,7 +285,7 @@ def coverdl(path: str,
         error("--recursive and --tag cannot be used together.")
         return
 
-    path_locations = None
+    path_locations: list[str] = []
     if not sys.stdin.isatty():
         stdin_text = click.get_text_stream('stdin')
         path_locations = list(stdin_text.read().rstrip().split('\n'))
@@ -310,7 +293,7 @@ def coverdl(path: str,
         if options.recursive and len(options.path) != 1:
             error("Please specify (one) path for recursive search.")
             return
-        path_locations = get_album_paths(options.path[0], must_have_cover=options.upgrade) if options.recursive else options.path
+        path_locations = get_album_paths(options.path[0], must_have_cover=options.upgrade) if options.recursive else list(options.path)
 
     if options.upgrade:
         handle_upgrade(options, path_locations, selected_providers)

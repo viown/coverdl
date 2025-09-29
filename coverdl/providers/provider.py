@@ -1,7 +1,7 @@
 from typing import Optional
 from abc import ABC, abstractmethod
 from coverdl.providers.source import Source
-from coverdl.cover import Cover
+from coverdl.cover import ExtCover
 from difflib import SequenceMatcher
 
 class Provider(ABC):
@@ -14,5 +14,5 @@ class Provider(ABC):
         return SequenceMatcher(None, title1.lower().strip(), title2.lower().strip()).ratio()
 
     @abstractmethod
-    def get_covers(self, artist: str, album: str) -> list[Cover]:
+    def get_covers(self, artist: str, album: str) -> list[ExtCover]:
         pass

@@ -1,5 +1,5 @@
 from coverdl import __version__
-from coverdl.cover import Cover
+from coverdl.cover import ExtCover
 from coverdl.exceptions import ProviderRequestFailed
 from coverdl.providers.provider import Provider
 from coverdl.providers.source import Source
@@ -18,7 +18,7 @@ class DiscogsProvider(Provider):
             "Authorization": f"Discogs key={self.API_KEY}, secret={self.SECRET_KEY}"
         }
 
-    def get_covers(self, artist, album):
+    def get_covers(self, artist, album) -> list[ExtCover]:
         params = {
             "artist": artist,
             "release_title": album
@@ -37,7 +37,7 @@ class DiscogsProvider(Provider):
 
                 if similarity_ratio > 0.8:
                     results.append(
-                        Cover(
+                        ExtCover(
                             artist=artist,
                             title=album,
                             source=self.SOURCE,

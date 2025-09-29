@@ -1,30 +1,20 @@
-from PIL import Image
-import requests
 import os
 import mimetypes
-import imagehash
+import click
 from coverdl.metadata import SUPPORTED_SONG_EXTENSIONS
+from coverdl.cover import Cover
 
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
-DEFAULT_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 7.0; BLN-L22) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Mobile Safari/537.36"
-}
+def error(message):
+    click.echo(f"{click.style('Error:', fg='red')} {message}")
 
-def download_cover(url, target, cover_name):
-    r = requests.get(url, headers=DEFAULT_HEADERS, timeout=10)
-    r.raise_for_status()
+def warn(message, silence=False):
+    if silence:
+        return
+    click.echo(f"{click.style('Warn:', fg='yellow')} {message}")
 
-    with open(os.path.join(target, cover_name), 'wb') as f:
-        f.write(r.content)
-
-def compare_covers(img1, img2):
-    hash_0 = imagehash.average_hash(Image.open(img1))
-    hash_1 = imagehash.average_hash(Image.open(img2))
-
-    return hash_0 - hash_1
-
-def get_album_paths(path, must_have_cover=True):
+def get_album_paths(path, must_have_cover=True) -> list[str]:
     paths = []
     for root, dirs, _ in os.walk(path):
         for current_dir in dirs:
@@ -39,9 +29,12 @@ def get_base_path(path):
     return os.path.normpath(path)
 
 def get_extension_from_url(url):
-    return mimetypes.guess_extension(mimetypes.guess_type(url)[0])
+    guessed_type = mimetypes.guess_type(url)
 
-def get_cover(path):
+    if guessed_type and len(guessed_type) > 0 and guessed_type[0]:
+        return mimetypes.guess_extension(guessed_type[0])
+
+def get_cover(path) -> Cover | None:
     if os.path.isfile(path):
         path = os.path.dirname(os.path.abspath(path))
 
@@ -50,17 +43,17 @@ def get_cover(path):
     for file in files:
         name, ext = os.path.splitext(file)
         if ext in IMAGE_EXTENSIONS and name in ["folder", "poster", "cover", "default"]:
-            return os.path.join(path, file)
+            return Cover(path=os.path.join(path, file))
 
-def has_song(dir):
-    for f in os.listdir(dir):
+def has_song(dir_path: str):
+    for f in os.listdir(dir_path):
         _, ext = os.path.splitext(f)
         if ext in SUPPORTED_SONG_EXTENSIONS:
             return True
     return False
 
-def has_cover(path):
+def has_cover(path) -> bool:
     return bool(get_cover(path))
 
-def is_album_dir(dir):
-    return has_cover(dir) and has_song(dir)
+def is_album_dir(dir_path: str):
+    return has_cover(dir) and has_song(dir_path)
