@@ -4,12 +4,13 @@ from coverdl.providers import Provider
 from coverdl.cache import Cache
 from coverdl.cover import Cover, ExtCover
 from coverdl.utils import get_cover, IMAGE_EXTENSIONS
-from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
+from coverdl.metadata import get_metadata_from_path
 from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded, ProviderRequestFailed
 from requests.exceptions import Timeout
 from mutagen import MutagenError
 import click
 import os
+
 
 class UpgradeService:
     def __init__(self, path_locations: list[str], options: Options, providers: list[Provider]) -> None:
@@ -26,14 +27,6 @@ class UpgradeService:
             self._upgrade_cover_art(path)
 
         self.cache.save()
-
-    def _get_metadata_from_path(self, path: str):
-        if os.path.isdir(path):
-            self.console.echo(f"Fetching metadata from album directory {click.style(path, bold=True)}")
-            return get_metadata_from_directory(path)
-        else:
-            self.console.echo(f"Fetching metadata from track {click.style(path, bold=True)}")
-            return get_metadata_from_file(path)
 
     def _get_results_from_providers(self, artist: str, album: str) -> list[ExtCover]:
         results: list[ExtCover] = []
@@ -116,7 +109,8 @@ class UpgradeService:
             return
 
         try:
-            metadata = self._get_metadata_from_path(path)
+            self.console.echo(f"Fetching metadata from {click.style(path, bold=True)}")
+            metadata = get_metadata_from_path(path)
         except (MutagenError, TriesExceeded, MissingMetadata, MetadataNotFound):
             self.console.error(f"Failed to fetch metadata from {path}")
             self.cache.add(os.path.abspath(path))
