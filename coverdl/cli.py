@@ -6,7 +6,7 @@ from mutagen import MutagenError
 from coverdl import __version__
 from coverdl.providers import providers
 from coverdl.cache import Cache
-from coverdl.providers.provider import Provider
+from coverdl.providers.base import Provider
 from coverdl.cover import ExtCover
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
@@ -173,11 +173,7 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 
             similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= options.max_hamming_distance
 
-            if similarity_check:
-                candidate = cover_candidate
-                candidate_hamming_distance = hamming_distance
-                break
-            else:
+            if not similarity_check:
                 if options.strict or options.max_hamming_distance == 0:
                     warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
                         f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.",
@@ -188,6 +184,10 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
                         options.silence_warnings)
                 continue
 
+            candidate = cover_candidate
+            candidate_hamming_distance = hamming_distance
+            break
+
         if not candidate:
             error(f"No suitable cover art could be found for {click.style(path, bold=True)} (exhausted all candidates)")
             cache.add(os.path.abspath(path))
@@ -195,10 +195,11 @@ def handle_upgrade(options: Options, path_locations: list[str], selected_provide
 
         if options.delete_old_covers:
             cover.delete()
-            click.echo(f"Deleted {cover}")
+            click.echo(f"Deleted {cover.path}")
         else:
+            old_cover = cover.path
             cover.backup()
-            click.echo(f"Renamed {cover} to {cover.path}")
+            click.echo(f"Renamed {old_cover} to {cover.path}")
 
         target = os.path.join(path, options.cover_name + cover_candidate.ext)
         cover_candidate.download(target)

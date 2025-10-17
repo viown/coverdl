@@ -1,5 +1,5 @@
 import requests
-from coverdl.providers.provider import Provider
+from coverdl.providers.base import Provider
 from coverdl.cover import ExtCover
 from coverdl.providers.source import Source
 from coverdl.exceptions import ProviderRequestFailed

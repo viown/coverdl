@@ -1,4 +1,3 @@
-from __future__ import annotations
 from PIL import Image
 from coverdl.providers.source import Source
 import imagehash
@@ -19,10 +18,10 @@ class ExtCover:
     source: Source
     cover_url: str
     ext: str
-    confidence: int = 1
+    confidence: float = 1
 
     def __init__(self, artist: str, title: str, source: Source,
-                 cover_url: str, ext: str, confidence: int = 1) -> None:
+                 cover_url: str, ext: str, confidence: float = 1) -> None:
         self.artist = artist
         self.title = title
         self.source = source
@@ -32,6 +31,9 @@ class ExtCover:
         self._buffer = None
 
     def get_buffer(self) -> io.BytesIO | None:
+        """
+        Fetches the cover art as a buffer and caches it
+        """
         if self._buffer:
             return self._buffer
 
@@ -65,6 +67,7 @@ class Cover:
 
     def __init__(self, path: str):
         self.path = path
+        self.img = Image.open(self.path)
 
     @property
     def size(self):
@@ -72,15 +75,13 @@ class Cover:
 
     @property
     def shape(self):
-        img = Image.open(self.path)
-
-        return img.size
+        return self.img.size
 
     def compare(self, ext_cover: ExtCover):
         """
         Compare similarity between an external cover art
         """
-        hash_0 = imagehash.average_hash(Image.open(self.path))
+        hash_0 = imagehash.average_hash(self.img)
         buffer = ext_cover.get_buffer()
 
         if buffer:

@@ -3,6 +3,7 @@ import mimetypes
 import click
 from coverdl.metadata import SUPPORTED_SONG_EXTENSIONS
 from coverdl.cover import Cover
+from difflib import SequenceMatcher
 
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
@@ -13,6 +14,9 @@ def warn(message, silence=False):
     if silence:
         return
     click.echo(f"{click.style('Warn:', fg='yellow')} {message}")
+
+def compare(title1: str, title2: str) -> float:
+    return SequenceMatcher(None, title1.lower().strip(), title2.lower().strip()).ratio()
 
 def get_album_paths(path, must_have_cover=True) -> list[str]:
     paths = []

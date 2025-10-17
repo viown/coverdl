@@ -1,4 +1,4 @@
-from coverdl.providers.provider import Provider
+from coverdl.providers.base import Provider
 from coverdl.providers.itunes import ITunesProvider
 from coverdl.providers.source import Source
 from coverdl.utils import get_extension_from_url

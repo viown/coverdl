@@ -1,9 +1,9 @@
 from coverdl import __version__
 from coverdl.cover import ExtCover
 from coverdl.exceptions import ProviderRequestFailed
-from coverdl.providers.provider import Provider
+from coverdl.providers.base import Provider
 from coverdl.providers.source import Source
-from coverdl.utils import get_extension_from_url
+from coverdl.utils import get_extension_from_url, compare
 import requests
 
 class DiscogsProvider(Provider):
@@ -33,7 +33,7 @@ class DiscogsProvider(Provider):
             data = r.json()
 
             for item in data["results"]:
-                similarity_ratio = self.compare_titles(item["title"], f"{artist} - {album}")
+                similarity_ratio = compare(item["title"], f"{artist} - {album}")
 
                 if similarity_ratio > 0.8:
                     results.append(
