@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coverdl"
-version = "0.4.0"
+version = "0.4.1"
 description = "A command-line tool for downloading high quality album cover art"
 authors = ["viown <48097677+viown@users.noreply.github.com>"]
 readme = "README.md"
