@@ -53,11 +53,9 @@ Use the `--max-size` option (in MBs) to prevent coverdl from replacing cover art
 
 Use `--max-upgrade-size` (in MBs) to prevent downloading cover art that exceed a certain size.
 
-Use the `--strict` flag to ensure only perfect comparisons will be upgraded. For example, if your cover art has an explicit advisory label in the cover art while the upgrade candidate doesn't, `--strict` will block the upgrade.
+Use the `--strict` option to ensure only perfect comparisons will be upgraded. For example, if your cover art has an explicit advisory label in the cover art while the upgrade candidate doesn't, `--strict` will block the upgrade.
 
-### Replace non-square cover art
-
-Alongside the `--upgrade` option, `--replace-non-square` will replace the cover art for all albums which do not have a perfectly square (1:1) aspect ratio. Replacing non-square cover art will not take into account the similarity of both images.
+Use the `--replace-non-square` option to also upgrade cover arts that aren't perfectly square. This can be useful to replace cover art that have bad white lines on the edges or to replace images that aren't really cover art.
 
 ## Advanced
 
