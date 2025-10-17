@@ -5,15 +5,14 @@ from requests.exceptions import HTTPError, Timeout
 from mutagen import MutagenError
 from coverdl import __version__
 from coverdl.providers import providers
-from coverdl.cache import Cache
 from coverdl.providers.base import Provider
 from coverdl.cover import ExtCover
 from coverdl.providers.source import Source
 from coverdl.metadata import get_metadata_from_file, get_metadata_from_directory
-from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded, ProviderRequestFailed
+from coverdl.exceptions import MetadataNotFound, TriesExceeded, ProviderRequestFailed
+from coverdl.upgrade import UpgradeService
 from coverdl.utils import (
     has_cover,
-    get_cover,
     get_album_paths,
     IMAGE_EXTENSIONS,
     warn,
@@ -98,116 +97,6 @@ def handle_download(options: Options, path_locations: list[str], selected_provid
 
     click.echo()
     click.echo(f"{click.style('Completed:', bold=True)} {completed}, {click.style('Failed:', bold=True)} {failed}")
-
-def handle_upgrade(options: Options, path_locations: list[str], selected_providers: list[Provider]):
-    cache = Cache(options.cache)
-
-    for path in path_locations:
-        cover = get_cover(path)
-
-        if cache.has(os.path.abspath(path)):
-            warn(f"{click.style(path, bold=True)} exists in cache. It'll be skipped.", options.silence_warnings)
-            continue
-
-        if not cover:
-            warn(f"{click.style(path, bold=True)} does not have cover. Skipping.", options.silence_warnings)
-            continue
-
-        cover_size = cover.size / 1000000
-
-        if cover_size > options.max_size:
-            warn(f"{click.style(cover, bold=True)} exceeds --max-size ({round(cover_size, 2)}M / {options.max_size}M). Skipping.", options.silence_warnings)
-            continue
-
-        try:
-            metadata = get_metadata_from_path(path)
-        except (MutagenError, TriesExceeded, MissingMetadata, MetadataNotFound):
-            error(f"Failed to fetch metadata from {path}")
-            cache.add(os.path.abspath(path))
-            continue
-
-        results: list[ExtCover] = []
-
-        for provider in selected_providers:
-            try:
-                if metadata:
-                    results = results + provider.get_covers(metadata.artist, metadata.album)
-            except ProviderRequestFailed as e:
-                warn(f"Failed to fetch cover art data from provider: {e.args[0].value}. Got error: {e.args[1]}", options.silence_warnings)
-
-        if len(results) == 0:
-            error(f"No suitable upgradable cover art could be found for {click.style(path, bold=True)} (all providers returned no results)")
-            cache.add(os.path.abspath(path))
-            continue
-
-        candidate = None
-        candidate_hamming_distance = None
-
-        for i, cover_candidate in enumerate(results):
-            rank = i + 1
-
-            if cover_candidate.ext not in IMAGE_EXTENSIONS:
-                warn(f"Image {cover_candidate.ext} not allowed as valid image format.", options.silence_warnings)
-                continue
-
-            hamming_distance = None
-            try:
-                hamming_distance = cover.compare(cover_candidate)
-            except Timeout:
-                error(f"Timed out while downloading cover art for {click.style(path, bold=True)}.")
-                continue
-       
-            cover_candidate_buffer_size = cover_candidate.get_buffer_size() / 1000000
-
-            if cover_candidate_buffer_size > options.max_upgrade_size:
-                warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                    f"exceeds max_upgrade_size ({round(cover_candidate_buffer_size)}M / {options.max_upgrade_size}M). Skipping.",
-                    options.silence_warnings)
-                continue
-
-            if cover_candidate_buffer_size <= cover_size:
-                warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                    f"is less than or equivalent in size ({cover_candidate_buffer_size}M / {cover_size}M). Skipping.",
-                    options.silence_warnings)
-                continue
-
-            similarity_check = hamming_distance == 0 if options.strict else hamming_distance <= options.max_hamming_distance
-
-            if not similarity_check:
-                if options.strict or options.max_hamming_distance == 0:
-                    warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs 0). Skipping.",
-                        options.silence_warnings)
-                else:
-                    warn(f"Cover candidate (#{rank}) for {click.style(path, bold=True)} " \
-                        f"does not meet similarity requirements (hamming distance = {hamming_distance}, needs <= {options.max_hamming_distance}). Skipping.",
-                        options.silence_warnings)
-                continue
-
-            candidate = cover_candidate
-            candidate_hamming_distance = hamming_distance
-            break
-
-        if not candidate:
-            error(f"No suitable cover art could be found for {click.style(path, bold=True)} (exhausted all candidates)")
-            cache.add(os.path.abspath(path))
-            continue
-
-        if options.delete_old_covers:
-            cover.delete()
-            click.echo(f"Deleted {cover.path}")
-        else:
-            old_cover = cover.path
-            cover.backup()
-            click.echo(f"Renamed {old_cover} to {cover.path}")
-
-        target = os.path.join(path, options.cover_name + cover_candidate.ext)
-        cover_candidate.download(target)
-
-        click.echo(f"{click.style('Successfully', fg='green')} saved new cover art: {target} (hamming distance = {candidate_hamming_distance})")
-        cache.add(os.path.abspath(path))
-
-    cache.save()
 
 @click.command(context_settings={'show_default': True})
 @click.option('-p', '--provider',
@@ -297,6 +186,7 @@ def coverdl(path: str,
         path_locations = get_album_paths(options.path[0], must_have_cover=options.upgrade) if options.recursive else list(options.path)
 
     if options.upgrade:
-        handle_upgrade(options, path_locations, selected_providers)
+        upgrade_service = UpgradeService(path_locations, options, selected_providers)
+        upgrade_service.upgrade()
     else:
         handle_download(options, path_locations, selected_providers)
