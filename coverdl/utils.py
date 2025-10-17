@@ -1,24 +1,15 @@
 import os
 import mimetypes
-import click
 from coverdl.metadata import SUPPORTED_SONG_EXTENSIONS
 from coverdl.cover import Cover
 from difflib import SequenceMatcher
 
 IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 
-def error(message):
-    click.echo(f"{click.style('Error:', fg='red')} {message}")
-
-def warn(message, silence=False):
-    if silence:
-        return
-    click.echo(f"{click.style('Warn:', fg='yellow')} {message}")
-
 def compare(title1: str, title2: str) -> float:
     return SequenceMatcher(None, title1.lower().strip(), title2.lower().strip()).ratio()
 
-def get_album_paths(path, must_have_cover=True) -> list[str]:
+def get_album_paths(path: str, must_have_cover=True) -> list[str]:
     paths = []
     for root, dirs, _ in os.walk(path):
         for current_dir in dirs:
@@ -27,18 +18,18 @@ def get_album_paths(path, must_have_cover=True) -> list[str]:
                 paths.append(full_dir)
     return paths
 
-def get_base_path(path):
+def get_base_path(path: str):
     if os.path.isfile(path):
         return os.path.dirname(path)
     return os.path.normpath(path)
 
-def get_extension_from_url(url):
+def get_extension_from_url(url: str):
     guessed_type = mimetypes.guess_type(url)
 
     if guessed_type and len(guessed_type) > 0 and guessed_type[0]:
         return mimetypes.guess_extension(guessed_type[0])
 
-def get_cover(path) -> Cover | None:
+def get_cover(path: str) -> Cover | None:
     if os.path.isfile(path):
         path = os.path.dirname(os.path.abspath(path))
 
@@ -56,8 +47,8 @@ def has_song(dir_path: str):
             return True
     return False
 
-def has_cover(path) -> bool:
+def has_cover(path: str) -> bool:
     return bool(get_cover(path))
 
 def is_album_dir(dir_path: str):
-    return has_cover(dir) and has_song(dir_path)
+    return has_cover(dir_path) and has_song(dir_path)

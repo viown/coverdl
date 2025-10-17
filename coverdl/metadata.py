@@ -1,17 +1,17 @@
+from dataclasses import dataclass
+import os
 import mutagen
 from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
-from dataclasses import dataclass
-import os
 from coverdl.exceptions import MetadataNotFound, MissingMetadata, TriesExceeded
 
 SUPPORTED_SONG_EXTENSIONS = [".mp3", ".flac", ".m4a"]
 
 @dataclass
 class Metadata:
-    album: str = None
-    artist: str = None
+    album: str
+    artist: str
 
 METADATA_MAPPING = {
     MP3: {
@@ -28,8 +28,8 @@ METADATA_MAPPING = {
     }
 }
 
-def get_metadata_from_file(path):
-    metadata = {}
+def get_metadata_from_file(path: str):
+    metadata: dict[str, str] = {}
     file = mutagen.File(path)
 
     for filetype, mapping in METADATA_MAPPING.items():
@@ -42,7 +42,7 @@ def get_metadata_from_file(path):
 
     return Metadata(**metadata)
 
-def get_metadata_from_directory(path):
+def get_metadata_from_directory(path: str):
     tries = 0
     for root, _, files in os.walk(path):
         for file in files:
@@ -60,8 +60,8 @@ def get_metadata_from_directory(path):
                     raise TriesExceeded()
     raise MetadataNotFound()
 
-def get_metadata_from_path(path):
+def get_metadata_from_path(path: str):
     if os.path.isdir(path):
         return get_metadata_from_directory(path)
-    elif os.path.isfile(path):
+    else:
         return get_metadata_from_file(path)

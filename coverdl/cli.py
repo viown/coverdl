@@ -1,15 +1,12 @@
-import os
 import sys
 import click
 from coverdl import __version__
+from coverdl.console import Console
 from coverdl.providers import providers
 from coverdl.providers.source import Source
 from coverdl.upgrade import UpgradeService
 from coverdl.download import DownloadService
-from coverdl.utils import (
-    get_album_paths,
-    error
-)
+from coverdl.utils import get_album_paths
 from coverdl.options import Options
 
 @click.command(context_settings={'show_default': True})
@@ -50,7 +47,7 @@ from coverdl.options import Options
               is_flag=True)
 @click.argument('path', type=click.Path(exists=True), nargs=-1)
 @click.version_option(__version__)
-def coverdl(path: str,
+def coverdl(path: list[str],
             provider: list[Source],
             cover_name: str,
             cache: str,
@@ -80,13 +77,15 @@ def coverdl(path: str,
         silence_warnings=silence_warnings,
         delete_old_covers=delete_old_covers
     )
+
+    console = Console(options.silence_warnings)
     
     # Get and sort the providers based on user preference
     selected_providers = list(filter(lambda p: p.SOURCE in provider, providers))
     selected_providers.sort(key=lambda p: options.providers.index(p.SOURCE))
 
     if options.recursive and options.tags:
-        error("--recursive and --tag cannot be used together.")
+        console.error("--recursive and --tag cannot be used together.")
         return
 
     path_locations: list[str] = []
@@ -95,7 +94,7 @@ def coverdl(path: str,
         path_locations = list(stdin_text.read().rstrip().split('\n'))
     else:
         if options.recursive and len(options.path) != 1:
-            error("Please specify (one) path for recursive search.")
+            console.error("Please specify (one) path for recursive search.")
             return
         path_locations = get_album_paths(options.path[0], must_have_cover=options.upgrade) if options.recursive else list(options.path)
 
