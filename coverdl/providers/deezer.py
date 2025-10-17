@@ -1,6 +1,6 @@
 import requests
-from coverdl.providers.provider import Provider
-from coverdl.cover import Cover
+from coverdl.providers.base import Provider
+from coverdl.cover import ExtCover
 from coverdl.providers.source import Source
 from coverdl.exceptions import ProviderRequestFailed
 from coverdl.utils import get_extension_from_url
@@ -9,7 +9,7 @@ class DeezerProvider(Provider):
     BASE_URL = "https://api.deezer.com"
     SOURCE = Source.DEEZER
 
-    def get_covers(self, artist, album) -> list[Cover]:
+    def get_covers(self, artist, album) -> list[ExtCover]:
         results = []
         params={
             "q": f"artist:\"{artist}\" album:\"{album}\""
@@ -21,7 +21,7 @@ class DeezerProvider(Provider):
 
             for item in data["data"]:
                 results.append(
-                    Cover(
+                    ExtCover(
                         artist=item["artist"]["name"],
                         title=item["title"],
                         source=self.SOURCE,

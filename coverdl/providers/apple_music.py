@@ -1,7 +1,8 @@
-from coverdl.providers.provider import Provider
+from coverdl.providers.base import Provider
 from coverdl.providers.itunes import ITunesProvider
 from coverdl.providers.source import Source
 from coverdl.utils import get_extension_from_url
+from coverdl.cover import ExtCover
 import requests
 
 class AppleMusicProvider(Provider):
@@ -26,7 +27,7 @@ class AppleMusicProvider(Provider):
 
         return r.ok
 
-    def get_covers(self, artist, album):
+    def get_covers(self, artist, album) -> list[ExtCover]:
         results = []
         covers = self.itunes_provider.get_covers(artist, album)
 

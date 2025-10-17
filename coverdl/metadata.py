@@ -59,3 +59,9 @@ def get_metadata_from_directory(path):
                 if tries > 3:
                     raise TriesExceeded()
     raise MetadataNotFound()
+
+def get_metadata_from_path(path):
+    if os.path.isdir(path):
+        return get_metadata_from_directory(path)
+    elif os.path.isfile(path):
+        return get_metadata_from_file(path)

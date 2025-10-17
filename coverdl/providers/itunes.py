@@ -1,16 +1,15 @@
 from coverdl.exceptions import ProviderRequestFailed
-from coverdl.providers.provider import Provider
+from coverdl.providers.base import Provider
 from coverdl.providers.source import Source
-from coverdl.cover import Cover
-from coverdl.utils import get_extension_from_url
-from difflib import SequenceMatcher
+from coverdl.cover import ExtCover
+from coverdl.utils import get_extension_from_url, compare
 import requests
 
 class ITunesProvider(Provider):
     BASE_URL = "https://itunes.apple.com"
     SOURCE = Source.ITUNES
 
-    def get_covers(self, artist, album):
+    def get_covers(self, artist, album) -> list[ExtCover]:
         results = []
         params = {
             "term": artist,
@@ -25,11 +24,11 @@ class ITunesProvider(Provider):
             for item in data["results"]:
                 # Check if the album names are somewhat similar.
                 # TODO: Filter out possible identifiers in the name
-                similarity_ratio = self.compare_titles(item["collectionName"], album)
+                similarity_ratio = compare(item["collectionName"], album)
                 if similarity_ratio > 0.8:
                     cover_url = item.get("artworkUrl100") or item.get("artworkUrl60")
                     results.append(
-                        Cover(
+                        ExtCover(
                             artist=item["artistName"],
                             title=item["collectionName"],
                             source=self.SOURCE,
