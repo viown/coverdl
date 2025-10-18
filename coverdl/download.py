@@ -40,6 +40,8 @@ class DownloadService:
                     break
             except ProviderRequestFailed as e:
                 self.console.warn(f"Failed to fetch cover art data from provider: {e.args[0].value}. Got error: {e.args[1]}")
+            except Timeout:
+                self.console.warn(f"Provider {provider.SOURCE.value} timed out while fetching covers")
 
         return results
 
