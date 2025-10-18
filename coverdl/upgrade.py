@@ -107,7 +107,7 @@ class UpgradeService:
         cover_size = cover.size / 1000000
 
         if cover_size > self.options.max_size:
-            self.console.warn(f"{click.style(cover, bold=True)} exceeds --max-size ({round(cover_size, 2)}M / {self.options.max_size}M). Skipping.")
+            self.console.warn(f"{click.style(cover.path, bold=True)} exceeds --max-size ({round(cover_size, 2)}M / {self.options.max_size}M). Skipping.")
             return
 
         try:
