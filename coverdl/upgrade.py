@@ -53,7 +53,7 @@ class UpgradeService:
             self.console.error(f"Timed out while downloading cover art for {click.style(self.current_path, bold=True)}.")
             return
 
-        if not hamming_distance:
+        if hamming_distance is None:
             self.console.warn(f"Failed to calculate hamming distance for candidate {candidate.cover_url}. Skipping.")
             return
 

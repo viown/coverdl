@@ -85,7 +85,8 @@ class Cover:
         buffer = ext_cover.get_buffer()
 
         if buffer:
-            hash_1 = imagehash.average_hash(Image.open(buffer))
+            img = Image.open(buffer)
+            hash_1 = imagehash.average_hash(img)
 
             return hash_0 - hash_1
     
